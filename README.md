@@ -4,3 +4,5 @@ Profesor: Yisheng
 
 ## Integrantes
 - Christian Vilera
+- Isaac Rodriguez
+- Arnaldo Velasquez
