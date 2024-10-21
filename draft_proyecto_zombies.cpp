@@ -2,36 +2,13 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <iomanip>
-#include <codecvt>
-#include <locale>
-#include <memory> // Para punteros inteligentes
+#include <memory>    // Para punteros inteligentes (unique_ptr)
+#include <algorithm> // Para std::find_if
 
 using namespace std;
 
-/*  HECHO POR:
-    1. Christian Vilera
-    2. Isaac Rodriguez
-    3. Arnaldo Velasquez
-*/
-
-/* Introduccion al lore:
-    1.
-*/
-
 /* COMPONENTES */
-// 1) Estrucutra para zombies
-struct Zombies
-{
-    std::string nombre_zombie;
-    int ataque;
-    int durabilidad;
-
-    Zombies(std::string nombre, int atk, int dur)
-        : nombre_zombie(nombre), ataque(atk), durabilidad(dur) {}
-};
-
-// 2) Estructura para accesorios
+// 1) Estructura para accesorios
 struct Accesorios
 {
     std::string nombre_accesorio;
@@ -40,135 +17,413 @@ struct Accesorios
     int municiones;
     int duracion;
 
-    Accesorios(std::string nombre, std::string tipo, int val, int mun, int dur)
-        : nombre_accesorio(nombre), tipo(tipo), valor(val), municiones(mun), duracion(dur) {}
+    Accesorios(std::string nombre, std::string tipo, int val, int mun, int dur) // Constructor
+        : nombre_accesorio(nombre), tipo(tipo), valor(val), municiones(mun), duracion(dur)
+    {
+    }
 };
 
-// 3) Estructura para soldados
+// 2) Estructura para zombies
+struct Zombies
+{
+    std::string nombre_zombie;
+    int ataque;
+    int velocidad;
+    int durabilidad;
+    bool poder_especial;
+
+    Zombies(std::string nombre, int atk, int vcd, int dur, bool pwr) // Constructor
+        : nombre_zombie(nombre), ataque(atk), velocidad(vcd), durabilidad(dur), poder_especial(pwr)
+    {
+    }
+};
+
+// 3) Estructura para la mochila
+struct Mochila
+{
+    std::string propietario;
+    std::vector<std::unique_ptr<Accesorios>> accesorios; // Hasta 3 accesorios
+
+    Mochila(std::string d) : propietario(d) {}
+
+    // Método para agregar accesorios a la mochila
+    bool agregarAccesorio(std::unique_ptr<Accesorios> accesorio)
+    {
+        if (accesorios.size() < 3)
+        {
+            accesorios.push_back(std::move(accesorio));
+            return true;
+        }
+        else
+        {
+            std::cout << "Mochila llena, no se puede agregar más accesorios.\n";
+            return false;
+        }
+    }
+
+    // Método para mostrar los accesorios en la mochila
+    void mostrarAccesorios() const
+    {
+        std::cout << "Mochila de " << propietario << " contiene:\n";
+        for (const auto &accesorio : accesorios)
+        {
+            std::cout << "- " << accesorio->nombre_accesorio << " (Tipo: " << accesorio->tipo
+                      << ", Valor: " << accesorio->valor
+                      << ", Municiones: " << accesorio->municiones
+                      << ", Duracion: " << accesorio->duracion << ")\n";
+        }
+    }
+};
+
+// 4) Estructura para soldados
 struct Soldado
 {
     std::string nombre_soldado;
-    int salud;
-    std::unique_ptr<Accesorios> accesorio; // Pointer to an accessory
+    const int salud = 100; // Salud constante
+    Mochila mochila;
 
-    Soldado(std::string nombre, int hp)
-        : nombre_soldado(nombre), salud(hp), accesorio(nullptr) {}
+    Soldado(std::string nombre)
+        : nombre_soldado(nombre), mochila(nombre) {} // Constructor inicializa mochila
 
-    void asignarAccesorio(std::unique_ptr<Accesorios> nuevoAccesorio)
+    // Método para asignar un accesorio a la mochila
+    void agregarAccesorioMochila(std::unique_ptr<Accesorios> accesorio)
     {
-        accesorio = std::move(nuevoAccesorio);
+        if (!mochila.agregarAccesorio(std::move(accesorio)))
+        {
+            std::cout << "No se pudo agregar el accesorio a la mochila.\n";
+        }
+    }
+
+    // Método para mostrar el soldado y su mochila
+    void mostrarSoldado() const
+    {
+        std::cout << "Soldado: " << nombre_soldado << "\nSalud: " << salud << std::endl;
+        mochila.mostrarAccesorios();
     }
 };
 
-// 4) Estructura para mapas
-struct Mapa
+/* FUNCIONES PARA GESTIONAR SOLDADOS, ZOMBIES, Y ACCESORIOS */
+
+// Vectores para almacenar soldados, zombies, y accesorios
+std::vector<std::shared_ptr<Soldado>> soldados;
+std::vector<std::unique_ptr<Zombies>> zombies;
+std::vector<std::unique_ptr<Accesorios>> accesorios;
+
+// Función para agregar soldado
+void agregarSoldado()
 {
-    std::string nombre_estacion;
-    int cantidad_zombies;
-    std::vector<std::unique_ptr<Zombies>> zombies; // Vector to store zombies dynamically
+    std::string nombre;
+    std::cout << "Ingrese el nombre del soldado: ";
+    std::cin >> nombre;
+    soldados.push_back(std::make_shared<Soldado>(nombre));
+    std::cout << "Soldado " << nombre << " agregado.\n";
+}
 
-    Mapa(std::string nombre) : nombre_estacion(nombre), cantidad_zombies(0) {}
+// Función para agregar un zombie
+void agregarZombie()
+{
+    int opcion;
+    std::cout << "Seleccione el tipo de zombie a agregar:\n";
+    std::cout << "1. Zombies rápidos y ágiles\n";
+    std::cout << "2. Zombies tanques\n";
+    std::cout << "3. Zombies inteligentes\n";
+    std::cout << "4. Zombies infectados por hongos\n";
+    std::cout << "5. Zombies bioluminiscentes\n";
+    std::cin >> opcion;
 
-    void agregarZombie(std::unique_ptr<Zombies> nuevoZombie)
+    std::unique_ptr<Zombies> nuevoZombie;
+
+    switch (opcion)
     {
-        zombies.push_back(std::move(nuevoZombie));
-        cantidad_zombies++;
+    case 1:
+        nuevoZombie = std::make_unique<Zombies>("Zombie rápido y ágil", 20, 90, 30, false);
+        std::cout << "Zombie rápido y ágil agregado.\n";
+        break;
+    case 2:
+        nuevoZombie = std::make_unique<Zombies>("Zombie tanque", 70, 20, 100, false);
+        std::cout << "Zombie tanque agregado.\n";
+        break;
+    case 3:
+        nuevoZombie = std::make_unique<Zombies>("Zombie inteligente", 40, 50, 50, true);
+        std::cout << "Zombie inteligente agregado.\n";
+        break;
+    case 4:
+        nuevoZombie = std::make_unique<Zombies>("Zombie infectado por hongos", 60, 30, 80, true);
+        std::cout << "Zombie infectado por hongos agregado.\n";
+        break;
+    case 5:
+        nuevoZombie = std::make_unique<Zombies>("Zombie bioluminiscente", 50, 60, 70, true);
+        std::cout << "Zombie bioluminiscente agregado.\n";
+        break;
+    default:
+        std::cout << "Opción inválida. No se agregó ningún zombie.\n";
+        return;
     }
-};
 
-/* FUNCIONES: Declaracion */
-void Bienvenida(const std::string &fileName);
-int agregar_zombies(Zombies);
-int agregar_accesorios(Accesorios);
-int agregar_equipos(Soldado);
-int agregar_estacion(Mapa);
+    zombies.push_back(std::move(nuevoZombie)); // Agregar el zombie a la lista
+}
 
-// se repite todo con eliminar y modificar
+// Función para agregar un accesorio
+void agregarAccesorio()
+{
+    std::string nombre, tipo;
+    int valor, municiones, duracion;
+    std::cout << "Ingrese el nombre del accesorio: ";
+    std::cin >> nombre;
+    std::cout << "Ingrese tipo, valor, municiones y Duracion: ";
+    std::cin >> tipo >> valor >> municiones >> duracion;
+    accesorios.push_back(std::make_unique<Accesorios>(nombre, tipo, valor, municiones, duracion));
+    std::cout << "Accesorio " << nombre << " agregado.\n";
+}
 
-/* PROGRAMA */
+// Función para mostrar soldado
+void mostrarSoldados()
+{
+    std::cout << "Soldados disponibles:\n";
+    for (const auto &soldado : soldados)
+    {
+        soldado->mostrarSoldado();
+    }
+}
 
-// Funcion para imprimir la bandera con fuente ASCII
+// Función para mostrar zombies
+void mostrarZombies()
+{
+    std::cout << "Zombies disponibles:\n";
+    for (const auto &zombie : zombies)
+    {
+        std::cout << "Zombie: " << zombie->nombre_zombie << ", Ataque: " << zombie->ataque << "\n";
+    }
+}
+
+// Función para mostrar accesorios
+void mostrarAccesorios()
+{
+    std::cout << "Accesorios disponibles:\n";
+    for (const auto &accesorio : accesorios)
+    {
+        std::cout << "Accesorio: " << accesorio->nombre_accesorio << ", Tipo: " << accesorio->tipo << "\n";
+    }
+}
+
+// Función para eliminar un soldado
+void eliminarSoldado()
+{
+    std::string nombre;
+    std::cout << "Ingrese el nombre del soldado a eliminar: ";
+    std::cin >> nombre;
+
+    auto it = std::find_if(soldados.begin(), soldados.end(),
+                           [&nombre](const std::shared_ptr<Soldado> &soldado)
+                           { return soldado->nombre_soldado == nombre; });
+
+    if (it != soldados.end())
+    {
+        soldados.erase(it);
+        std::cout << "Soldado " << nombre << " eliminado.\n";
+    }
+    else
+    {
+        std::cout << "Soldado no encontrado.\n";
+    }
+}
+
+// Función para eliminar un zombie
+void eliminarZombie()
+{
+    std::string nombre;
+    std::cout << "Ingrese el nombre del zombie a eliminar: ";
+    std::cin >> nombre;
+
+    auto it = std::find_if(zombies.begin(), zombies.end(),
+                           [&nombre](const std::unique_ptr<Zombies> &zombie)
+                           { return zombie->nombre_zombie == nombre; });
+
+    if (it != zombies.end())
+    {
+        zombies.erase(it);
+        std::cout << "Zombie " << nombre << " eliminado.\n";
+    }
+    else
+    {
+        std::cout << "Zombie no encontrado.\n";
+    }
+}
+
+// Función para eliminar un accesorio
+void eliminarAccesorio()
+{
+    std::string nombre;
+    std::cout << "Ingrese el nombre del accesorio a eliminar: ";
+    std::cin >> nombre;
+
+    auto it = std::find_if(accesorios.begin(), accesorios.end(),
+                           [&nombre](const std::unique_ptr<Accesorios> &accesorio)
+                           { return accesorio->nombre_accesorio == nombre; });
+
+    if (it != accesorios.end())
+    {
+        accesorios.erase(it);
+        std::cout << "Accesorio " << nombre << " eliminado.\n";
+    }
+    else
+    {
+        std::cout << "Accesorio no encontrado.\n";
+    }
+}
+
+/* MENÚS INTERACTIVOS */
+void menuSoldados()
+{
+    int opcion;
+    do
+    {
+        std::cout << "\n--- Menu de Soldados ---\n";
+        std::cout << "1. Agregar Soldado\n";
+        std::cout << "2. Mostrar Soldados\n";
+        std::cout << "3. Eliminar Soldado\n";
+        std::cout << "4. Volver\n";
+        std::cin >> opcion;
+
+        switch (opcion)
+        {
+        case 1:
+            agregarSoldado();
+            break;
+        case 2:
+            mostrarSoldados();
+            break;
+        case 3:
+            eliminarSoldado();
+            break;
+        case 4:
+            return;
+        default:
+            std::cout << "Opción inválida.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
+
+void menuZombies()
+{
+    int opcion;
+    do
+    {
+        std::cout << "\n--- Menu de Zombies ---\n";
+        std::cout << "1. Agregar Zombie\n";
+        std::cout << "2. Mostrar Zombies\n";
+        std::cout << "3. Eliminar Zombie\n";
+        std::cout << "4. Volver\n";
+        std::cin >> opcion;
+
+        switch (opcion)
+        {
+        case 1:
+            agregarZombie();
+            break;
+        case 2:
+            mostrarZombies();
+            break;
+        case 3:
+            eliminarZombie();
+            break;
+        case 4:
+            return;
+        default:
+            std::cout << "Opción inválida.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
+
+void menuAccesorios()
+{
+    int opcion;
+    do
+    {
+        std::cout << "\n--- Menu de Accesorios ---\n";
+        std::cout << "1. Agregar Accesorio\n";
+        std::cout << "2. Mostrar Accesorios\n";
+        std::cout << "3. Eliminar Accesorio\n";
+        std::cout << "4. Volver\n";
+        std::cin >> opcion;
+
+        switch (opcion)
+        {
+        case 1:
+            agregarAccesorio();
+            break;
+        case 2:
+            mostrarAccesorios();
+            break;
+        case 3:
+            eliminarAccesorio();
+            break;
+        case 4:
+            return;
+        default:
+            std::cout << "Opción inválida.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
+
+void menuPrincipal()
+{
+    int opcion;
+    do
+    {
+        std::cout << "\n--- Menu Principal ---\n";
+        std::cout << "1. Gestionar Soldados\n";
+        std::cout << "2. Gestionar Zombies\n";
+        std::cout << "3. Gestionar Accesorios\n";
+        std::cout << "4. Salir\n";
+        std::cin >> opcion;
+
+        switch (opcion)
+        {
+        case 1:
+            menuSoldados();
+            break;
+        case 2:
+            menuZombies();
+            break;
+        case 3:
+            menuAccesorios();
+            break;
+        case 4:
+            std::cout << "Saliendo del programa.\n";
+            break;
+        default:
+            std::cout << "Opción inválida.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
+
+// Bienvenida al programa
 void Bienvenida(const std::string &fileName)
 {
     std::ifstream inputFile(fileName); // Abrir el archivo
 
     if (!inputFile)
     {
-        std::cerr << "Error: Could not open file " << fileName << std::endl;
+        std::cerr << "Error: No se pudo abrir el archivo " << fileName << std::endl;
         return;
     }
 
     std::string linea;
-    while (std::getline(inputFile, linea)) // Leer cada linea del archivo
+    while (std::getline(inputFile, linea)) // Leer cada línea del archivo
     {
-        std::cout << linea << std::endl; // Imprimir cada linea en el terminal
+        std::cout << linea << std::endl; // Imprimir cada línea en el terminal
     }
 
     inputFile.close(); // Cerrar el archivo
 }
 
-// Funcion para agregar un soldado
-std::unique_ptr<Soldado> agregarSoldado(std::string nombre, int salud)
-{
-    return std::make_unique<Soldado>(nombre, salud);
-}
-
-// Funcion para agregar un accesorio
-std::unique_ptr<Accesorios> agregarAccesorio(std::string nombre, std::string tipo, int valor, int municiones, int duracion)
-{
-    return std::make_unique<Accesorios>(nombre, tipo, valor, municiones, duracion);
-}
-
-// Funcion para agregar un zombie
-std::unique_ptr<Zombies> agregarZombie(std::string nombre, int ataque, int durabilidad)
-{
-    return std::make_unique<Zombies>(nombre, ataque, durabilidad);
-}
-
-// Funcion para asignar un accesorio a un soldado
-void asignarAccesorioSoldado(Soldado &soldado, std::unique_ptr<Accesorios> accesorio)
-{
-    soldado.asignarAccesorio(std::move(accesorio));
-}
-
-// Funcion para mostrar la informacion de un soldado
-void mostrarSoldado(const Soldado &soldado)
-{
-    std::cout << "Soldado: " << soldado.nombre_soldado << "\nSalud: " << soldado.salud << std::endl;
-    if (soldado.accesorio)
-    {
-        std::cout << "Accesorio: " << soldado.accesorio->nombre_accesorio
-                  << " (Tipo: " << soldado.accesorio->tipo
-                  << ", Valor: " << soldado.accesorio->valor
-                  << ", Municiones: " << soldado.accesorio->municiones
-                  << ", Duracion: " << soldado.accesorio->duracion << ")\n";
-    }
-    else
-    {
-        std::cout << "No se han asignado accesorios.\n";
-    }
-}
-
-// Funcion para mostrar la informacion de un zombie
-void mostrarZombie(const Zombies &zombie)
-{
-    std::cout << "Zombie: " << zombie.nombre_zombie << "\nAtaque: " << zombie.ataque
-              << "\nDurabilidad: " << zombie.durabilidad << std::endl;
-}
-
-// Funcion para mostrar la informacion de un mapa
-void mostrarMapa(const Mapa &mapa)
-{
-    std::cout << "Mapa: " << mapa.nombre_estacion << "\nCantidad de Zombies: " << mapa.cantidad_zombies << std::endl;
-    for (const auto &zombie : mapa.zombies)
-    {
-        mostrarZombie(*zombie);
-    }
-}
-
 int main()
 {
-    // Bienvenida, presiona X para continuar
     char continuar;
     while (continuar != 'X')
     {
@@ -179,24 +434,6 @@ int main()
         std::system("cls");
     }
 
-    // Crear algunos soldados
-    auto soldado1 = agregarSoldado("Richtofen", 100);
-    auto soldado2 = agregarSoldado("Nikolai", 90);
-
-    // Crear algunos accesorios y asignarlos a los soldados
-    auto accesorio1 = agregarAccesorio("Escudo", "Defensa", 50, 0, 100);
-    auto accesorio2 = agregarAccesorio("Rifle", "Ataque", 75, 30, 80);
-    asignarAccesorioSoldado(*soldado1, std::move(accesorio1));
-    asignarAccesorioSoldado(*soldado2, std::move(accesorio2));
-
-    // Mostrar la informacion de los soldados
-    mostrarSoldado(*soldado1);
-    mostrarSoldado(*soldado2);
-
-    // Crear un mapa y agregar algunos zombies
-    Mapa estacion("Estacion Central");
-    auto zombie1 = agregarZombie("Zombie A", 30, 40);
-    auto zombie2 = agregarZombie("Zombie B", 50, 60);
-    estacion.agregarZombie(std::move(zombie1));
-    estacion.agregarZombie(std::move(zombie2));
+    menuPrincipal(); // Iniciar el menú principal
+    return 0;
 }
