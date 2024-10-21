@@ -5,6 +5,12 @@
 #include <memory>    // Para punteros inteligentes (unique_ptr)
 #include <algorithm> // Para std::find_if
 
+/* HECHO POR:
+    CHRISTIAN VILERA
+    ISAAC RODRIGUEZ
+    ARNALDO VELASQUEZ
+*/
+
 using namespace std;
 
 /* COMPONENTES */
@@ -56,7 +62,7 @@ struct Mochila
         }
         else
         {
-            std::cout << "Mochila llena, no se puede agregar más accesorios.\n";
+            std::cout << "Mochila llena, no se puede agregar mas accesorios.\n";
             return false;
         }
     }
@@ -124,7 +130,7 @@ void agregarZombie()
 {
     int opcion;
     std::cout << "Seleccione el tipo de zombie a agregar:\n";
-    std::cout << "1. Zombies rápidos y ágiles\n";
+    std::cout << "1. Zombies rapidos y agiles\n";
     std::cout << "2. Zombies tanques\n";
     std::cout << "3. Zombies inteligentes\n";
     std::cout << "4. Zombies infectados por hongos\n";
@@ -136,8 +142,8 @@ void agregarZombie()
     switch (opcion)
     {
     case 1:
-        nuevoZombie = std::make_unique<Zombies>("Zombie rápido y ágil", 20, 90, 30, false);
-        std::cout << "Zombie rápido y ágil agregado.\n";
+        nuevoZombie = std::make_unique<Zombies>("Zombie rapido y agil", 20, 90, 30, false);
+        std::cout << "Zombie rapido y agil agregado.\n";
         break;
     case 2:
         nuevoZombie = std::make_unique<Zombies>("Zombie tanque", 70, 20, 100, false);
@@ -156,7 +162,7 @@ void agregarZombie()
         std::cout << "Zombie bioluminiscente agregado.\n";
         break;
     default:
-        std::cout << "Opción inválida. No se agregó ningún zombie.\n";
+        std::cout << "Opcion invalida. No se agrego ningun zombie.\n";
         return;
     }
 
@@ -231,22 +237,114 @@ void eliminarSoldado()
 // Función para eliminar un zombie
 void eliminarZombie()
 {
-    std::string nombre;
-    std::cout << "Ingrese el nombre del zombie a eliminar: ";
-    std::cin >> nombre;
-
-    auto it = std::find_if(zombies.begin(), zombies.end(),
-                           [&nombre](const std::unique_ptr<Zombies> &zombie)
-                           { return zombie->nombre_zombie == nombre; });
-
-    if (it != zombies.end())
+    if (zombies.empty())
     {
-        zombies.erase(it);
-        std::cout << "Zombie " << nombre << " eliminado.\n";
+        std::cout << "No hay zombies para eliminar.\n";
+        return;
+    }
+
+    int opcion;
+    std::cout << "Seleccione el tipo de zombie que desea eliminar:\n";
+    std::cout << "1. Zombies rapidos y agiles\n";
+    std::cout << "2. Zombies tanques\n";
+    std::cout << "3. Zombies inteligentes\n";
+    std::cout << "4. Zombies infectados por hongos\n";
+    std::cout << "5. Zombies bioluminiscentes\n";
+    std::cout << "----> ";
+    std::cin >> opcion;
+
+    std::string tipoZombie;
+    switch (opcion)
+    {
+    case 1:
+        tipoZombie = "Zombie rapido y agil";
+        break;
+    case 2:
+        tipoZombie = "Zombie tanque";
+        break;
+    case 3:
+        tipoZombie = "Zombie inteligente";
+        break;
+    case 4:
+        tipoZombie = "Zombie infectado por hongos";
+        break;
+    case 5:
+        tipoZombie = "Zombie bioluminiscente";
+        break;
+    default:
+        std::cout << "Opción invalida.\n";
+        return;
+    }
+
+    std::cout << "Seleccione una opcion:\n";
+    std::cout << "1. Eliminar numero especifico de zombies de este tipo\n";
+    std::cout << "2. Eliminar todos los zombies de este tipo\n";
+    int subopcion;
+    std::cout << "----> ";
+    std::cin >> subopcion;
+
+    if (subopcion == 1)
+    {
+        int cantidadEliminar;
+        int count = 0;
+        for (const auto &zombie : zombies)
+        {
+            if (zombie->nombre_zombie == tipoZombie)
+                count++;
+        }
+
+        if (count == 0)
+        {
+            std::cout << "No hay zombies de este tipo para eliminar.\n";
+            return;
+        }
+
+        std::cout << "Hay " << count << " zombies de tipo " << tipoZombie << ".\n";
+        std::cout << "¿Cuantos desea eliminar? ";
+        std::cout << "----> ";
+        std::cin >> cantidadEliminar;
+
+        if (cantidadEliminar > count)
+        {
+            std::cout << "No puede eliminar mas de los existentes. Eliminando " << count << " zombies.\n";
+            cantidadEliminar = count;
+        }
+
+        int eliminados = 0;
+        for (auto it = zombies.begin(); it != zombies.end() && eliminados < cantidadEliminar;)
+        {
+            if ((*it)->nombre_zombie == tipoZombie)
+            {
+                it = zombies.erase(it); // Eliminar el zombie y avanzar el iterador
+                eliminados++;
+            }
+            else
+            {
+                ++it; // Avanzar el iterador si no se elimina
+            }
+        }
+        std::cout << eliminados << " zombies de tipo " << tipoZombie << " eliminados.\n";
+    }
+    else if (subopcion == 2)
+    {
+        int eliminados = 0;
+        for (auto it = zombies.begin(); it != zombies.end();)
+        {
+            if ((*it)->nombre_zombie == tipoZombie)
+            {
+                it = zombies.erase(it); // Eliminar el zombie y avanzar el iterador
+                eliminados++;
+            }
+            else
+            {
+                ++it; // Avanzar el iterador si no se elimina
+            }
+        }
+        std::cout << "Se eliminaron " << eliminados << " zombies de tipo " << tipoZombie << ".\n";
     }
     else
     {
-        std::cout << "Zombie no encontrado.\n";
+        std::cout << "Opcion invalida.\n";
     }
 }
 
@@ -283,7 +381,9 @@ void menuSoldados()
         std::cout << "2. Mostrar Soldados\n";
         std::cout << "3. Eliminar Soldado\n";
         std::cout << "4. Volver\n";
+        std::cout << "----> ";
         std::cin >> opcion;
+        system("cls");
 
         switch (opcion)
         {
@@ -315,7 +415,9 @@ void menuZombies()
         std::cout << "2. Mostrar Zombies\n";
         std::cout << "3. Eliminar Zombie\n";
         std::cout << "4. Volver\n";
+        std::cout << "----> ";
         std::cin >> opcion;
+        system("cls");
 
         switch (opcion)
         {
@@ -331,7 +433,7 @@ void menuZombies()
         case 4:
             return;
         default:
-            std::cout << "Opción inválida.\n";
+            std::cout << "Opcion invalida.\n";
             break;
         }
     } while (opcion != 4);
@@ -347,7 +449,9 @@ void menuAccesorios()
         std::cout << "2. Mostrar Accesorios\n";
         std::cout << "3. Eliminar Accesorio\n";
         std::cout << "4. Volver\n";
+        std::cout << "----> ";
         std::cin >> opcion;
+        system("cls");
 
         switch (opcion)
         {
@@ -363,7 +467,7 @@ void menuAccesorios()
         case 4:
             return;
         default:
-            std::cout << "Opción inválida.\n";
+            std::cout << "Opcion invalida.\n";
             break;
         }
     } while (opcion != 4);
@@ -379,7 +483,9 @@ void menuPrincipal()
         std::cout << "2. Gestionar Zombies\n";
         std::cout << "3. Gestionar Accesorios\n";
         std::cout << "4. Salir\n";
+        std::cout << "Ingrese una opcion: ";
         std::cin >> opcion;
+        system("cls");
 
         switch (opcion)
         {
@@ -396,7 +502,7 @@ void menuPrincipal()
             std::cout << "Saliendo del programa.\n";
             break;
         default:
-            std::cout << "Opción inválida.\n";
+            std::cout << "Opcion invalida.\n";
             break;
         }
     } while (opcion != 4);
