@@ -22,9 +22,10 @@ struct Accesorios
     int valor;
     int municiones;
     int duracion;
+    bool mun_especial;
 
-    Accesorios(std::string nombre, std::string tipo, int val, int mun, int dur) // Constructor
-        : nombre_accesorio(nombre), tipo(tipo), valor(val), municiones(mun), duracion(dur)
+    Accesorios(std::string nombre, std::string tipo, int val, int mun, int dur, bool m_esp) // Constructor
+        : nombre_accesorio(nombre), tipo(tipo), valor(val), municiones(mun), duracion(dur), mun_especial(m_esp)
     {
     }
 };
@@ -135,6 +136,7 @@ void agregarZombie()
     std::cout << "3. Zombies inteligentes\n";
     std::cout << "4. Zombies infectados por hongos\n";
     std::cout << "5. Zombies bioluminiscentes\n";
+    std::cout << "----> ";
     std::cin >> opcion;
 
     std::unique_ptr<Zombies> nuevoZombie;
@@ -170,16 +172,255 @@ void agregarZombie()
 }
 
 // Función para agregar un accesorio
-void agregarAccesorio()
+// Función para agregar un accesorio (arma) al soldado
+std::unique_ptr<Accesorios> agregarAccesorio()
 {
-    std::string nombre, tipo;
+    int categoria;
+    std::cout << "Seleccione la categoría de armas:\n";
+    std::cout << "1. Armas a distancia\n";
+    std::cout << "2. Armas cuerpo a cuerpo\n";
+    std::cout << "3. Armas improvisadas\n";
+    std::cout << "----> ";
+    std::cin >> categoria;
+
+    int subcategoria, opcion;
+    std::string nombre_accesorio, tipo;
     int valor, municiones, duracion;
-    std::cout << "Ingrese el nombre del accesorio: ";
-    std::cin >> nombre;
-    std::cout << "Ingrese tipo, valor, municiones y Duracion: ";
-    std::cin >> tipo >> valor >> municiones >> duracion;
-    accesorios.push_back(std::make_unique<Accesorios>(nombre, tipo, valor, municiones, duracion));
-    std::cout << "Accesorio " << nombre << " agregado.\n";
+    bool mun_especial;
+
+    switch (categoria)
+    {
+    case 1:
+        std::cout << "Seleccione el tipo de arma a distancia:\n";
+        std::cout << "1. Armas de fuego\n";
+        std::cout << "2. Armas arrojadizas\n";
+        std::cout << "3. Armas de proyectiles\n";
+        std::cout << "----> ";
+        std::cin >> subcategoria;
+
+        if (subcategoria == 1) // Armas de fuego
+        {
+            std::cout << "1. Pistolas\n2. Escopetas\n3. Fusiles de asalto\n4. Rifles de francotirador\n";
+            std::cout << "----> ";
+            std::cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Pistola";
+                valor = 30;
+                municiones = 15;
+                duracion = 100;
+                tipo = "Arma de fuego";
+                mun_especial = false;
+                break;
+            case 2:
+                nombre_accesorio = "Escopeta";
+                valor = 50;
+                municiones = 8;
+                duracion = 80;
+                tipo = "Arma de fuego";
+                mun_especial = false;
+                break;
+            case 3:
+                nombre_accesorio = "Fusil de asalto";
+                valor = 70;
+                municiones = 30;
+                duracion = 60;
+                tipo = "Arma de fuego";
+                mun_especial = false;
+                break;
+            case 4:
+                nombre_accesorio = "Rifle de francotirador";
+                valor = 90;
+                municiones = 5;
+                duracion = 50;
+                tipo = "Arma de fuego";
+                mun_especial = false;
+                break;
+            }
+        }
+        else if (subcategoria == 2) // Armas arrojadizas
+        {
+            std::cout << "1. Granadas\n2. Cocteles Molotov\n";
+            std::cout << "----> ";
+            std::cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Granada";
+                valor = 40;
+                municiones = 3;
+                duracion = 1;
+                tipo = "Arma arrojadiza";
+                mun_especial = false;
+                break;
+            case 2:
+                nombre_accesorio = "Coctel Molotov";
+                valor = 45;
+                municiones = 2;
+                duracion = 1;
+                tipo = "Arma arrojadiza";
+                mun_especial = false;
+                break;
+            }
+        }
+        else if (subcategoria == 3) // Armas de proyectiles
+        {
+            std::cout << "1. Ballestas\n2. Tirachinas\n";
+            std::cout << "----> ";
+            std::cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Ballesta";
+                valor = 60;
+                municiones = 10;
+                duracion = 70;
+                tipo = "Arma de proyectiles";
+                mun_especial = true;
+                break;
+            case 2:
+                nombre_accesorio = "Tirachinas";
+                valor = 20;
+                municiones = 20;
+                duracion = 100;
+                tipo = "Arma de proyectiles";
+                mun_especial = true;
+                break;
+            }
+        }
+        break;
+
+    case 2:
+        std::cout << "Seleccione el tipo de arma cuerpo a cuerpo:\n";
+        std::cout << "1. Armas blancas\n2. Armas contundentes\n";
+        std::cout << "----> ";
+        std::cin >> subcategoria;
+
+        if (subcategoria == 1) // Armas blancas
+        {
+            std::cout << "1. Cuchillo\n2. Machete\n3. Espada\n";
+            std::cout << "----> ";
+            std::cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Cuchillo";
+                valor = 25;
+                municiones = 0;
+                duracion = 100;
+                tipo = "Arma blanca";
+                break;
+            case 2:
+                nombre_accesorio = "Machete";
+                valor = 40;
+                municiones = 0;
+                duracion = 80;
+                tipo = "Arma blanca";
+                break;
+            case 3:
+                nombre_accesorio = "Espada";
+                valor = 60;
+                municiones = 0;
+                duracion = 70;
+                tipo = "Arma blanca";
+                break;
+            }
+        }
+        else if (subcategoria == 2) // Armas contundentes
+        {
+            std::cout << "1. Bate de beisbol\n2. Martillo\n3. Tubería\n";
+            std::cout << "----> ";
+            std::cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Bate de beisbol";
+                valor = 35;
+                municiones = 0;
+                duracion = 90;
+                tipo = "Arma contundente";
+                mun_especial = false;
+                break;
+            case 2:
+                nombre_accesorio = "Martillo";
+                valor = 50;
+                municiones = 0;
+                duracion = 75;
+                tipo = "Arma contundente";
+                mun_especial = false;
+                break;
+            case 3:
+                nombre_accesorio = "Tuberia";
+                valor = 45;
+                municiones = 0;
+                duracion = 60;
+                tipo = "Arma contundente";
+                mun_especial = false;
+                break;
+            }
+        }
+        break;
+
+    case 3:
+        std::cout << "Seleccione el tipo de arma improvisada:\n";
+        std::cout << "1. Objetos punzantes\n2. Objetos contundentes\n3. Armas incendiarias\n4. Trampas\n";
+        std::cout << "----> ";
+        std::cin >> opcion;
+
+        switch (opcion)
+        {
+        case 1:
+            nombre_accesorio = "Objetos punzantes (clavos, tijeras, destornilladores)";
+            valor = 20;
+            municiones = 0;
+            duracion = 50;
+            tipo = "Arma improvisada";
+            mun_especial = false;
+            break;
+        case 2:
+            nombre_accesorio = "Objetos contundentes (ladrillos, rocas, palos)";
+            valor = 15;
+            municiones = 0;
+            duracion = 40;
+            tipo = "Arma improvisada";
+            mun_especial = false;
+            break;
+        case 3:
+            nombre_accesorio = "Armas incendiarias (fósforos, líquido inflamable)";
+            valor = 35;
+            municiones = 0;
+            duracion = 30;
+            tipo = "Arma improvisada";
+            mun_especial = false;
+            break;
+        case 4:
+            nombre_accesorio = "Trampas";
+            valor = 50;
+            municiones = 0;
+            duracion = 60;
+            tipo = "Arma improvisada";
+            mun_especial = false;
+            break;
+        }
+        break;
+
+    default:
+        std::cout << "Opcion invalida.\n";
+        return nullptr;
+    }
+
+    return std::make_unique<Accesorios>(nombre_accesorio, tipo, valor, municiones, duracion, mun_especial);
 }
 
 // Función para mostrar soldado
@@ -198,7 +439,7 @@ void mostrarZombies()
     std::cout << "Zombies disponibles:\n";
     for (const auto &zombie : zombies)
     {
-        std::cout << "Zombie: " << zombie->nombre_zombie << ", Ataque: " << zombie->ataque << "\n";
+        std::cout << "Zombie: " << zombie->nombre_zombie << " || Ataque: " << zombie->ataque << " | Velocidad: " << zombie->velocidad << " | Durabilidad: " << zombie->durabilidad << "\n";
     }
 }
 
