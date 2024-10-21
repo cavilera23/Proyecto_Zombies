@@ -77,7 +77,8 @@ struct Mochila
             std::cout << "- " << accesorio->nombre_accesorio << " (Tipo: " << accesorio->tipo
                       << ", Valor: " << accesorio->valor
                       << ", Municiones: " << accesorio->municiones
-                      << ", Duracion: " << accesorio->duracion << ")\n";
+                      << ", Duracion: " << accesorio->duracion
+                      << ", Municion Especial: " << (accesorio->mun_especial ? "Si" : "No") << ")\n";
         }
     }
 };
@@ -104,7 +105,8 @@ struct Soldado
     // Método para mostrar el soldado y su mochila
     void mostrarSoldado() const
     {
-        std::cout << "Soldado: " << nombre_soldado << "\nSalud: " << salud << std::endl;
+        std::cout << "Soldado: " << nombre_soldado << "\nSalud: " << salud << "\n"
+                  << std::endl;
         mochila.mostrarAccesorios();
     }
 };
@@ -171,12 +173,11 @@ void agregarZombie()
     zombies.push_back(std::move(nuevoZombie)); // Agregar el zombie a la lista
 }
 
-// Función para agregar un accesorio
 // Función para agregar un accesorio (arma) al soldado
 std::unique_ptr<Accesorios> agregarAccesorio()
 {
     int categoria;
-    std::cout << "Seleccione la categoría de armas:\n";
+    std::cout << "Seleccione la categoria de armas:\n";
     std::cout << "1. Armas a distancia\n";
     std::cout << "2. Armas cuerpo a cuerpo\n";
     std::cout << "3. Armas improvisadas\n";
@@ -419,8 +420,22 @@ std::unique_ptr<Accesorios> agregarAccesorio()
         std::cout << "Opcion invalida.\n";
         return nullptr;
     }
-
     return std::make_unique<Accesorios>(nombre_accesorio, tipo, valor, municiones, duracion, mun_especial);
+}
+
+// Función para crear un accesorio y añadirlo al vector global
+void crearAccesorio()
+{
+    auto accesorio = agregarAccesorio(); // Crea el accesorio usando la función agregarAccesorio
+    if (accesorio)
+    {                                               // Si el accesorio es válido (no es nulo)
+        accesorios.push_back(std::move(accesorio)); // Se añade al vector global
+        std::cout << "Accesorio creado y agregado exitosamente.\n";
+    }
+    else
+    {
+        std::cout << "No se pudo crear el accesorio.\n";
+    }
 }
 
 // Función para mostrar soldado
@@ -446,10 +461,21 @@ void mostrarZombies()
 // Función para mostrar accesorios
 void mostrarAccesorios()
 {
+    if (accesorios.empty())
+    { // Verifica si el vector de accesorios está vacío
+        std::cout << "No hay accesorios creados.\n";
+        return;
+    }
+
     std::cout << "Accesorios disponibles:\n";
-    for (const auto &accesorio : accesorios)
+    for (size_t i = 0; i < accesorios.size(); ++i)
     {
-        std::cout << "Accesorio: " << accesorio->nombre_accesorio << ", Tipo: " << accesorio->tipo << "\n";
+        std::cout << i + 1 << ") " << accesorios[i]->nombre_accesorio
+                  << " (Tipo: " << accesorios[i]->tipo
+                  << ", Valor: " << accesorios[i]->valor
+                  << ", Municiones: " << accesorios[i]->municiones
+                  << ", Duracion: " << accesorios[i]->duracion
+                  << ", Municion Especial: " << (accesorios[i]->mun_especial ? "Si" : "No") << ")\n";
     }
 }
 
@@ -592,23 +618,61 @@ void eliminarZombie()
 // Función para eliminar un accesorio
 void eliminarAccesorio()
 {
-    std::string nombre;
-    std::cout << "Ingrese el nombre del accesorio a eliminar: ";
-    std::cin >> nombre;
-
-    auto it = std::find_if(accesorios.begin(), accesorios.end(),
-                           [&nombre](const std::unique_ptr<Accesorios> &accesorio)
-                           { return accesorio->nombre_accesorio == nombre; });
-
-    if (it != accesorios.end())
+    if (accesorios.size() == 0)
     {
-        accesorios.erase(it);
-        std::cout << "Accesorio " << nombre << " eliminado.\n";
+        std::cout << "No hay accesorios para eliminar.\n";
+        return;
     }
-    else
+
+    // Mostrar accesorios disponibles para eliminar
+    std::cout << "Seleccione un accesorio para eliminar:\n";
+    for (int i = 0; i < accesorios.size(); ++i)
     {
-        std::cout << "Accesorio no encontrado.\n";
+        std::cout << i + 1 << ") " << accesorios[i]->nombre_accesorio
+                  << " (Tipo: " << accesorios[i]->tipo << ")\n";
     }
+
+    int opcion;
+    std::cin >> opcion;
+
+    if (opcion < 1 || opcion > accesorios.size())
+    {
+        std::cout << "Opcion no valida.\n";
+        return;
+    }
+
+    // Eliminar accesorio seleccionado
+    accesorios.erase(accesorios.begin() + (opcion - 1));
+    std::cout << "Accesorio eliminado exitosamente.\n";
+}
+
+// Función para asignar un accesorio creado a un soldado
+void asignarAccesorioSoldado()
+{
+    if (soldados.empty())
+    {
+        std::cout << "No hay soldados para asignar accesorios.\n";
+        return;
+    }
+
+    std::cout << "Seleccione el soldado al que desea asignar un accesorio:\n";
+    for (int i = 0; i < soldados.size(); ++i)
+    {
+        std::cout << i + 1 << ") " << soldados[i]->nombre_soldado << "\n";
+    }
+
+    int opcion;
+    std::cin >> opcion;
+
+    if (opcion < 1 || opcion > soldados.size())
+    {
+        std::cout << "Opcion no valida.\n";
+        return;
+    }
+
+    // Asigna el accesorio al soldado seleccionado
+    soldados[opcion - 1]->agregarAccesorioMochila(std::move(accesorios[opcion - 1]));
+    std::cout << "Accesorio asignado exitosamente al soldado.\n";
 }
 
 /* MENÚS INTERACTIVOS */
@@ -689,7 +753,8 @@ void menuAccesorios()
         std::cout << "1. Agregar Accesorio\n";
         std::cout << "2. Mostrar Accesorios\n";
         std::cout << "3. Eliminar Accesorio\n";
-        std::cout << "4. Volver\n";
+        std::cout << "4. Asignar Accesorio a Soldado\n";
+        std::cout << "5. Volver\n";
         std::cout << "----> ";
         std::cin >> opcion;
         system("cls");
@@ -697,7 +762,7 @@ void menuAccesorios()
         switch (opcion)
         {
         case 1:
-            agregarAccesorio();
+            crearAccesorio();
             break;
         case 2:
             mostrarAccesorios();
@@ -706,12 +771,14 @@ void menuAccesorios()
             eliminarAccesorio();
             break;
         case 4:
+            asignarAccesorioSoldado();
+        case 5:
             return;
         default:
             std::cout << "Opcion invalida.\n";
             break;
         }
-    } while (opcion != 4);
+    } while (opcion != 5);
 }
 
 void menuPrincipal()
