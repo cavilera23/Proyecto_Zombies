@@ -17,14 +17,14 @@ using namespace std;
 // 1) Estructura para accesorios
 struct Accesorios
 {
-    std::string nombre_accesorio;
-    std::string tipo;
+    string nombre_accesorio;
+    string tipo;
     int valor;
     int municiones;
     int duracion;
     bool mun_especial;
 
-    Accesorios(std::string nombre, std::string tipo, int val, int mun, int dur, bool m_esp) // Constructor
+    Accesorios(string nombre, string tipo, int val, int mun, int dur, bool m_esp) // Constructor
         : nombre_accesorio(nombre), tipo(tipo), valor(val), municiones(mun), duracion(dur), mun_especial(m_esp)
     {
     }
@@ -33,13 +33,13 @@ struct Accesorios
 // 2) Estructura para zombies
 struct Zombies
 {
-    std::string nombre_zombie;
+    string nombre_zombie;
     int ataque;
     int velocidad;
     int durabilidad;
     bool poder_especial;
 
-    Zombies(std::string nombre, int atk, int vcd, int dur, bool pwr) // Constructor
+    Zombies(string nombre, int atk, int vcd, int dur, bool pwr) // Constructor
         : nombre_zombie(nombre), ataque(atk), velocidad(vcd), durabilidad(dur), poder_especial(pwr)
     {
     }
@@ -48,22 +48,22 @@ struct Zombies
 // 3) Estructura para la mochila
 struct Mochila
 {
-    std::string propietario;
-    std::vector<std::unique_ptr<Accesorios>> accesorios; // Hasta 3 accesorios
+    string propietario;
+    vector<unique_ptr<Accesorios>> accesorios; // Hasta 3 accesorios
 
-    Mochila(std::string d) : propietario(d) {}
+    Mochila(string d) : propietario(d) {}
 
     // Método para agregar accesorios a la mochila
-    bool agregarAccesorio(std::unique_ptr<Accesorios> accesorio)
+    bool agregarAccesorio(unique_ptr<Accesorios> accesorio)
     {
         if (accesorios.size() < 3)
         {
-            accesorios.push_back(std::move(accesorio));
+            accesorios.push_back(move(accesorio));
             return true;
         }
         else
         {
-            std::cout << "Mochila llena, no se puede agregar mas accesorios.\n";
+            cout << "Mochila llena, no se puede agregar mas accesorios.\n";
             return false;
         }
     }
@@ -71,10 +71,10 @@ struct Mochila
     // Método para mostrar los accesorios en la mochila
     void mostrarAccesorios() const
     {
-        std::cout << "Mochila de " << propietario << " contiene:\n";
+        cout << "Mochila de " << propietario << " contiene:\n";
         for (const auto &accesorio : accesorios)
         {
-            std::cout << "- " << accesorio->nombre_accesorio << " (Tipo: " << accesorio->tipo
+            cout << "- " << accesorio->nombre_accesorio << " (Tipo: " << accesorio->tipo
                       << ", Valor: " << accesorio->valor
                       << ", Municiones: " << accesorio->municiones
                       << ", Duracion: " << accesorio->duracion
@@ -86,124 +86,417 @@ struct Mochila
 // 4) Estructura para soldados
 struct Soldado
 {
-    std::string nombre_soldado;
+    string nombre_soldado;
     const int salud = 100; // Salud constante
     Mochila mochila;
 
-    Soldado(std::string nombre)
+    Soldado(string nombre)
         : nombre_soldado(nombre), mochila(nombre) {} // Constructor inicializa mochila
 
     // Método para asignar un accesorio a la mochila
-    void agregarAccesorioMochila(std::unique_ptr<Accesorios> accesorio)
+    void agregarAccesorioMochila(unique_ptr<Accesorios> accesorio)
     {
-        if (!mochila.agregarAccesorio(std::move(accesorio)))
+        if (!mochila.agregarAccesorio(move(accesorio)))
         {
-            std::cout << "No se pudo agregar el accesorio a la mochila.\n";
+            cout << "No se pudo agregar el accesorio a la mochila.\n";
         }
     }
 
     // Método para mostrar el soldado y su mochila
     void mostrarSoldado() const
     {
-        std::cout << "Soldado: " << nombre_soldado << "\nSalud: " << salud << "\n"
-                  << std::endl;
+        cout << "Soldado: " << nombre_soldado << "\nSalud: " << salud << "\n"
+                  << endl;
         mochila.mostrarAccesorios();
     }
 };
 
+// 5)Estructura para los equipos
+struct Equipo {
+    string nombre_equipo;
+    vector<shared_ptr<Soldado>> soldados; // Lista de soldados en el equipo
+
+    Equipo(string nombre) : nombre_equipo(nombre) {}
+
+    // Método para mostrar los soldados en el equipo
+    void mostrarSoldados() const {
+        cout << "Equipo: " << nombre_equipo << "\n";
+        if (soldados.empty()) {
+            cout << "No hay soldados en este equipo.\n";
+            return;
+        }
+        for (const auto &soldado : soldados) {
+            cout << "- " << soldado->nombre_soldado << "\n";
+        }
+    }
+};
+
+// 6) Estructura para las selecciones del metro en el mapa del juego 
+struct SeccionMetro {
+    string nombre;          
+    bool hayZombies;             
+    bool hayAccesorios;          
+    SeccionMetro* siguiente;     
+
+    SeccionMetro(const string& nombre, bool zombies, bool accesorios)
+        : nombre(nombre), hayZombies(zombies), hayAccesorios(accesorios), siguiente(nullptr) {}
+};
+
+class MapaMetro {
+private:
+    SeccionMetro* inicio;
+
+public:
+    MapaMetro() : inicio(nullptr) {}
+
+    void agregarSeccion(const string& nombre, bool hayZombies, bool hayAccesorios) {
+        SeccionMetro* nuevaSeccion = new SeccionMetro(nombre, hayZombies, hayAccesorios);
+        if (!inicio) {
+            inicio = nuevaSeccion;
+        } else {
+            SeccionMetro* temp = inicio;
+            while (temp->siguiente) {
+                temp = temp->siguiente;
+            }
+            temp->siguiente = nuevaSeccion;
+        }
+    }
+
+    bool eliminarSeccion(const string& nombre) {
+        if (!inicio) return false;
+
+        if (inicio->nombre == nombre) {
+            SeccionMetro* temp = inicio;
+            inicio = inicio->siguiente;
+            delete temp;
+            return true;
+        }
+
+        SeccionMetro* actual = inicio;
+        while (actual->siguiente && actual->siguiente->nombre != nombre) {
+            actual = actual->siguiente;
+        }
+
+        if (actual->siguiente) {
+            SeccionMetro* temp = actual->siguiente;
+            actual->siguiente = temp->siguiente;
+            delete temp;
+            return true;
+        }
+
+        return false; // No se encontró la sección
+    }
+
+    bool editarSeccion(const string& nombre) {
+        SeccionMetro* actual = inicio;
+        while (actual) {
+            if (actual->nombre == nombre) {
+                cout << "Ingrese el nuevo nombre de la seccion: ";
+                cin.ignore();
+                getline(cin, actual->nombre);
+                cout << "¿Hay zombies en esta seccion? (1 = Si, 0 = No): ";
+                cin >> actual->hayZombies;
+                cout << "¿Hay accesorios en esta seccion? (1 = Si, 0 = No): ";
+                cin >> actual->hayAccesorios;
+                return true;
+            }
+            actual = actual->siguiente;
+        }
+        return false;
+    }
+
+    void mostrarMapa() {
+        SeccionMetro* temp = inicio;
+        while (temp) {
+            cout << "Seccion: " << temp->nombre
+                 << (temp->hayZombies ? " - ¡Cuidado! Zombies presentes" : " - Seguro")
+                 << (temp->hayAccesorios ? " - Hay accesorios aquí" : "") << endl;
+            temp = temp->siguiente;
+        }
+    }
+
+    ~MapaMetro() {
+        while (inicio) {
+            SeccionMetro* temp = inicio;
+            inicio = inicio->siguiente;
+            delete temp;
+        }
+    }
+};
+// Menú para gestionar el mapa
+void menuMapa(MapaMetro& mapa) {
+    int opcion = 0;
+    string nombre;
+    bool hayZombies;
+    bool hayAccesorios;
+    
+    while (opcion != 5) {
+        cout << "\n--- Menu de Manejo de Mapa ---\n";
+        cout << "1. Agregar Seccion\n";
+        cout << "2. Eliminar Seccion\n";
+        cout << "3. Editar Seccion\n";
+        cout << "4. Mostrar Mapa\n";
+        cout << "5. Volver al Menu Principal\n";
+        cout << "Seleccione una opcion: ";
+        cin >> opcion;
+        system("cls");
+
+        switch(opcion) {
+            case 1:
+                cout << "Ingrese el nombre de la seccion: ";
+                cin.ignore();
+                getline(cin, nombre);
+                cout << "¿Hay zombies en esta seccion? (1 = Si, 0 = No): ";
+                cin >> hayZombies;
+                cout << "¿Hay accesorios en esta seccion? (1 = Si, 0 = No): ";
+                cin >> hayAccesorios;
+                mapa.agregarSeccion(nombre, hayZombies, hayAccesorios);
+                cout << "Seccion agregada correctamente.\n";
+                break;
+            case 2:
+                cout << "Ingrese el nombre de la seccion a eliminar: ";
+                cin.ignore();
+                getline(cin, nombre);
+                if (mapa.eliminarSeccion(nombre)) {
+                    cout << "Seccion eliminada correctamente.\n";
+                } else {
+                    cout << "Seccion no encontrada.\n";
+                }
+                break;
+            case 3:
+            cout << "Ingrese el nombre de la seccion a editar: ";
+                cin.ignore();
+                getline(cin, nombre);
+                if (mapa.editarSeccion(nombre)) {
+                    cout << "Seccion editada correctamente.\n";
+                } else {
+                    cout << "Seccion no encontrada.\n";
+                }
+                break;
+            case 4:
+                mapa.mostrarMapa();
+                break;
+            case 5:
+                cout << "Volviendo al menu principal...\n";
+                break;
+            default:
+                cout << "Opcion no valida.\n";
+                break;
+        }
+    }
+}
+               
+
+
 /* FUNCIONES PARA GESTIONAR SOLDADOS, ZOMBIES, Y ACCESORIOS */
 
 // Vectores para almacenar soldados, zombies, y accesorios
-std::vector<std::shared_ptr<Soldado>> soldados;
-std::vector<std::unique_ptr<Zombies>> zombies;
-std::vector<std::unique_ptr<Accesorios>> accesorios;
+vector<shared_ptr<Soldado>> soldados;
+vector<unique_ptr<Zombies>> zombies;
+vector<unique_ptr<Accesorios>> accesorios;
+vector<unique_ptr<Equipo>> equipos; 
+
+//Funcion crear equipo
+void crearEquipo() {
+    string nombre;
+    while (true) {
+        cout << "Ingrese el nombre del equipo (mínimo 10 caracteres): ";
+        getline(cin, nombre); 
+
+        if (nombre.length() <= 10) { 
+            equipos.push_back(make_unique<Equipo>(nombre));
+            cout << "Equipo " << nombre << " creado.\n";
+            break; 
+        } else {
+            cout << "Error: El nombre del equipo debe tener al menos 10 caracteres. Inténtelo de nuevo.\n";
+        }
+    }
+}
+//Funcion agregar soldado a equipo
+void asignarSoldadoAEquipo()
+{
+    if (soldados.empty())
+    {
+        cout << "No hay soldados disponibles para asignar.\n";
+        return;
+    }
+
+    if (equipos.empty())
+    {
+        cout << "No hay equipos creados. Primero crea un equipo.\n";
+        return;
+    }
+
+    cout << "Seleccione un soldado para asignar:\n";
+    for (int i = 0; i < soldados.size(); ++i)
+    {
+        cout << i + 1 << ") " << soldados[i]->nombre_soldado << "\n";
+    }
+
+    int opcionSoldado;
+    cin >> opcionSoldado;
+
+    if (opcionSoldado < 1 || opcionSoldado > soldados.size())
+    {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    cout << "Seleccione un equipo al que desea asignar el soldado:\n";
+    for (int i = 0; i < equipos.size(); ++i)
+    {
+        cout << i + 1 << ") " << equipos[i]->nombre_equipo << "\n";
+    }
+
+    int opcionEquipo;
+    cin >> opcionEquipo;
+
+    if (opcionEquipo < 1 || opcionEquipo > equipos.size())
+    {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    // Asignar el soldado al equipo seleccionado
+    equipos[opcionEquipo - 1]->soldados.push_back(soldados[opcionSoldado - 1]);
+    cout << "Soldado " << soldados[opcionSoldado - 1]->nombre_soldado << " asignado al equipo " << equipos[opcionEquipo - 1]->nombre_equipo << ".\n";
+}
+
+//Mostras equipos
+void mostrarEquipos()
+{
+    if (equipos.empty())
+    {
+        cout << "No hay equipos creados.\n";
+        return;
+    }
+
+    for (const auto &equipo : equipos)
+    {
+        equipo->mostrarSoldados();
+    }
+}
+
+//Menu equipos 
+void menuEquipos(){
+    int opcion;
+    do
+    {
+        cout << "\n--- Menu de Equipos ---\n";
+        cout << "1. Crear Equipo\n";
+        cout << "2. Asignar Soldado a Equipo\n";
+        cout << "3. Mostrar Equipos\n";
+        cout << "4. Volver\n";
+        cout << "----> ";
+        cin >> opcion;
+        system("cls");
+
+        switch (opcion)
+        {
+        case 1:
+            crearEquipo();
+            break;
+        case 2:
+            asignarSoldadoAEquipo();
+            break;
+        case 3:
+            mostrarEquipos();
+            break;
+        case 4:
+            return; 
+        default:
+            cout << "Opción inválida.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
 
 // Función para agregar soldado
 void agregarSoldado()
 {
-    std::string nombre;
-    std::cout << "Ingrese el nombre del soldado: ";
-    std::cin >> nombre;
-    soldados.push_back(std::make_shared<Soldado>(nombre));
-    std::cout << "Soldado " << nombre << " agregado.\n";
+    string nombre;
+    cout << "Ingrese el nombre del soldado: ";
+    cin >> nombre;
+    soldados.push_back(make_shared<Soldado>(nombre));
+    cout << "Soldado " << nombre << " agregado.\n";
 }
 
 // Función para agregar un zombie
 void agregarZombie()
 {
     int opcion;
-    std::cout << "Seleccione el tipo de zombie a agregar:\n";
-    std::cout << "1. Zombies rapidos y agiles\n";
-    std::cout << "2. Zombies tanques\n";
-    std::cout << "3. Zombies inteligentes\n";
-    std::cout << "4. Zombies infectados por hongos\n";
-    std::cout << "5. Zombies bioluminiscentes\n";
-    std::cout << "----> ";
-    std::cin >> opcion;
+    cout << "Seleccione el tipo de zombie a agregar:\n";
+    cout << "1. Zombies rapidos y agiles\n";
+    cout << "2. Zombies tanques\n";
+    cout << "3. Zombies inteligentes\n";
+    cout << "4. Zombies infectados por hongos\n";
+    cout << "5. Zombies bioluminiscentes\n";
+    cout << "----> ";
+    cin >> opcion;
 
-    std::unique_ptr<Zombies> nuevoZombie;
+    unique_ptr<Zombies> nuevoZombie;
 
     switch (opcion)
     {
     case 1:
-        nuevoZombie = std::make_unique<Zombies>("Zombie rapido y agil", 20, 90, 30, false);
-        std::cout << "Zombie rapido y agil agregado.\n";
+        nuevoZombie = make_unique<Zombies>("Zombie rapido y agil", 20, 90, 30, false);
+        cout << "Zombie rapido y agil agregado.\n";
         break;
     case 2:
-        nuevoZombie = std::make_unique<Zombies>("Zombie tanque", 70, 20, 100, false);
-        std::cout << "Zombie tanque agregado.\n";
+        nuevoZombie = make_unique<Zombies>("Zombie tanque", 70, 20, 100, false);
+        cout << "Zombie tanque agregado.\n";
         break;
     case 3:
-        nuevoZombie = std::make_unique<Zombies>("Zombie inteligente", 40, 50, 50, true);
-        std::cout << "Zombie inteligente agregado.\n";
+        nuevoZombie = make_unique<Zombies>("Zombie inteligente", 40, 50, 50, true);
+        cout << "Zombie inteligente agregado.\n";
         break;
     case 4:
-        nuevoZombie = std::make_unique<Zombies>("Zombie infectado por hongos", 60, 30, 80, true);
-        std::cout << "Zombie infectado por hongos agregado.\n";
+        nuevoZombie = make_unique<Zombies>("Zombie infectado por hongos", 60, 30, 80, true);
+        cout << "Zombie infectado por hongos agregado.\n";
         break;
     case 5:
-        nuevoZombie = std::make_unique<Zombies>("Zombie bioluminiscente", 50, 60, 70, true);
-        std::cout << "Zombie bioluminiscente agregado.\n";
+        nuevoZombie = make_unique<Zombies>("Zombie bioluminiscente", 50, 60, 70, true);
+        cout << "Zombie bioluminiscente agregado.\n";
         break;
     default:
-        std::cout << "Opcion invalida. No se agrego ningun zombie.\n";
+        cout << "Opcion invalida. No se agrego ningun zombie.\n";
         return;
     }
 
-    zombies.push_back(std::move(nuevoZombie)); // Agregar el zombie a la lista
+    zombies.push_back(move(nuevoZombie)); // Agregar el zombie a la lista
 }
 
 // Función para agregar un accesorio (arma) al soldado
-std::unique_ptr<Accesorios> agregarAccesorio()
+unique_ptr<Accesorios> agregarAccesorio()
 {
     int categoria;
-    std::cout << "Seleccione la categoria de armas:\n";
-    std::cout << "1. Armas a distancia\n";
-    std::cout << "2. Armas cuerpo a cuerpo\n";
-    std::cout << "3. Armas improvisadas\n";
-    std::cout << "----> ";
-    std::cin >> categoria;
+    cout << "Seleccione la categoria de armas:\n";
+    cout << "1. Armas a distancia\n";
+    cout << "2. Armas cuerpo a cuerpo\n";
+    cout << "3. Armas improvisadas\n";
+    cout << "----> ";
+    cin >> categoria;
 
     int subcategoria, opcion;
-    std::string nombre_accesorio, tipo;
+    string nombre_accesorio, tipo;
     int valor, municiones, duracion;
     bool mun_especial;
 
     switch (categoria)
     {
     case 1:
-        std::cout << "Seleccione el tipo de arma a distancia:\n";
-        std::cout << "1. Armas de fuego\n";
-        std::cout << "2. Armas arrojadizas\n";
-        std::cout << "3. Armas de proyectiles\n";
-        std::cout << "----> ";
-        std::cin >> subcategoria;
+        cout << "Seleccione el tipo de arma a distancia:\n";
+        cout << "1. Armas de fuego\n";
+        cout << "2. Armas arrojadizas\n";
+        cout << "3. Armas de proyectiles\n";
+        cout << "----> ";
+        cin >> subcategoria;
 
         if (subcategoria == 1) // Armas de fuego
         {
-            std::cout << "1. Pistolas\n2. Escopetas\n3. Fusiles de asalto\n4. Rifles de francotirador\n";
-            std::cout << "----> ";
-            std::cin >> opcion;
+            cout << "1. Pistolas\n2. Escopetas\n3. Fusiles de asalto\n4. Rifles de francotirador\n";
+            cout << "----> ";
+            cin >> opcion;
             system("cls");
 
             switch (opcion)
@@ -244,9 +537,9 @@ std::unique_ptr<Accesorios> agregarAccesorio()
         }
         else if (subcategoria == 2) // Armas arrojadizas
         {
-            std::cout << "1. Granadas\n2. Cocteles Molotov\n";
-            std::cout << "----> ";
-            std::cin >> opcion;
+            cout << "1. Granadas\n2. Cocteles Molotov\n";
+            cout << "----> ";
+            cin >> opcion;
             system("cls");
 
             switch (opcion)
@@ -271,9 +564,9 @@ std::unique_ptr<Accesorios> agregarAccesorio()
         }
         else if (subcategoria == 3) // Armas de proyectiles
         {
-            std::cout << "1. Ballestas\n2. Tirachinas\n";
-            std::cout << "----> ";
-            std::cin >> opcion;
+            cout << "1. Ballestas\n2. Tirachinas\n";
+            cout << "----> ";
+            cin >> opcion;
             system("cls");
 
             switch (opcion)
@@ -299,16 +592,16 @@ std::unique_ptr<Accesorios> agregarAccesorio()
         break;
 
     case 2:
-        std::cout << "Seleccione el tipo de arma cuerpo a cuerpo:\n";
-        std::cout << "1. Armas blancas\n2. Armas contundentes\n";
-        std::cout << "----> ";
-        std::cin >> subcategoria;
+        cout << "Seleccione el tipo de arma cuerpo a cuerpo:\n";
+        cout << "1. Armas blancas\n2. Armas contundentes\n";
+        cout << "----> ";
+        cin >> subcategoria;
 
         if (subcategoria == 1) // Armas blancas
         {
-            std::cout << "1. Cuchillo\n2. Machete\n3. Espada\n";
-            std::cout << "----> ";
-            std::cin >> opcion;
+            cout << "1. Cuchillo\n2. Machete\n3. Espada\n";
+            cout << "----> ";
+            cin >> opcion;
             system("cls");
 
             switch (opcion)
@@ -338,9 +631,9 @@ std::unique_ptr<Accesorios> agregarAccesorio()
         }
         else if (subcategoria == 2) // Armas contundentes
         {
-            std::cout << "1. Bate de beisbol\n2. Martillo\n3. Tubería\n";
-            std::cout << "----> ";
-            std::cin >> opcion;
+            cout << "1. Bate de beisbol\n2. Martillo\n3. Tubería\n";
+            cout << "----> ";
+            cin >> opcion;
             system("cls");
 
             switch (opcion)
@@ -374,10 +667,10 @@ std::unique_ptr<Accesorios> agregarAccesorio()
         break;
 
     case 3:
-        std::cout << "Seleccione el tipo de arma improvisada:\n";
-        std::cout << "1. Objetos punzantes\n2. Objetos contundentes\n3. Armas incendiarias\n4. Trampas\n";
-        std::cout << "----> ";
-        std::cin >> opcion;
+        cout << "Seleccione el tipo de arma improvisada:\n";
+        cout << "1. Objetos punzantes\n2. Objetos contundentes\n3. Armas incendiarias\n4. Trampas\n";
+        cout << "----> ";
+        cin >> opcion;
 
         switch (opcion)
         {
@@ -417,10 +710,10 @@ std::unique_ptr<Accesorios> agregarAccesorio()
         break;
 
     default:
-        std::cout << "Opcion invalida.\n";
+        cout << "Opcion invalida.\n";
         return nullptr;
     }
-    return std::make_unique<Accesorios>(nombre_accesorio, tipo, valor, municiones, duracion, mun_especial);
+    return make_unique<Accesorios>(nombre_accesorio, tipo, valor, municiones, duracion, mun_especial);
 }
 
 // Función para crear un accesorio y añadirlo al vector global
@@ -429,19 +722,19 @@ void crearAccesorio()
     auto accesorio = agregarAccesorio(); // Crea el accesorio usando la función agregarAccesorio
     if (accesorio)
     {                                               // Si el accesorio es válido (no es nulo)
-        accesorios.push_back(std::move(accesorio)); // Se añade al vector global
-        std::cout << "Accesorio creado y agregado exitosamente.\n";
+        accesorios.push_back(move(accesorio)); // Se añade al vector global
+        cout << "Accesorio creado y agregado exitosamente.\n";
     }
     else
     {
-        std::cout << "No se pudo crear el accesorio.\n";
+        cout << "No se pudo crear el accesorio.\n";
     }
 }
 
 // Función para mostrar soldado
 void mostrarSoldados()
 {
-    std::cout << "Soldados disponibles:\n";
+    cout << "Soldados disponibles:\n";
     for (const auto &soldado : soldados)
     {
         soldado->mostrarSoldado();
@@ -451,10 +744,10 @@ void mostrarSoldados()
 // Función para mostrar zombies
 void mostrarZombies()
 {
-    std::cout << "Zombies disponibles:\n";
+    cout << "Zombies disponibles:\n";
     for (const auto &zombie : zombies)
     {
-        std::cout << "Zombie: " << zombie->nombre_zombie << " || Ataque: " << zombie->ataque << " | Velocidad: " << zombie->velocidad << " | Durabilidad: " << zombie->durabilidad << "\n";
+        cout << "Zombie: " << zombie->nombre_zombie << " || Ataque: " << zombie->ataque << " | Velocidad: " << zombie->velocidad << " | Durabilidad: " << zombie->durabilidad << "\n";
     }
 }
 
@@ -463,14 +756,14 @@ void mostrarAccesorios()
 {
     if (accesorios.empty())
     { // Verifica si el vector de accesorios está vacío
-        std::cout << "No hay accesorios creados.\n";
+        cout << "No hay accesorios creados.\n";
         return;
     }
 
-    std::cout << "Accesorios disponibles:\n";
+    cout << "Accesorios disponibles:\n";
     for (size_t i = 0; i < accesorios.size(); ++i)
     {
-        std::cout << i + 1 << ") " << accesorios[i]->nombre_accesorio
+        cout << i + 1 << ") " << accesorios[i]->nombre_accesorio
                   << " (Tipo: " << accesorios[i]->tipo
                   << ", Valor: " << accesorios[i]->valor
                   << ", Municiones: " << accesorios[i]->municiones
@@ -482,22 +775,22 @@ void mostrarAccesorios()
 // Función para eliminar un soldado
 void eliminarSoldado()
 {
-    std::string nombre;
-    std::cout << "Ingrese el nombre del soldado a eliminar: ";
-    std::cin >> nombre;
+    string nombre;
+    cout << "Ingrese el nombre del soldado a eliminar: ";
+    cin >> nombre;
 
-    auto it = std::find_if(soldados.begin(), soldados.end(),
-                           [&nombre](const std::shared_ptr<Soldado> &soldado)
+    auto it = find_if(soldados.begin(), soldados.end(),
+                           [&nombre](const shared_ptr<Soldado> &soldado)
                            { return soldado->nombre_soldado == nombre; });
 
     if (it != soldados.end())
     {
         soldados.erase(it);
-        std::cout << "Soldado " << nombre << " eliminado.\n";
+        cout << "Soldado " << nombre << " eliminado.\n";
     }
     else
     {
-        std::cout << "Soldado no encontrado.\n";
+        cout << "Soldado no encontrado.\n";
     }
 }
 
@@ -506,21 +799,21 @@ void eliminarZombie()
 {
     if (zombies.empty())
     {
-        std::cout << "No hay zombies para eliminar.\n";
+        cout << "No hay zombies para eliminar.\n";
         return;
     }
 
     int opcion;
-    std::cout << "Seleccione el tipo de zombie que desea eliminar:\n";
-    std::cout << "1. Zombies rapidos y agiles\n";
-    std::cout << "2. Zombies tanques\n";
-    std::cout << "3. Zombies inteligentes\n";
-    std::cout << "4. Zombies infectados por hongos\n";
-    std::cout << "5. Zombies bioluminiscentes\n";
-    std::cout << "----> ";
-    std::cin >> opcion;
+    cout << "Seleccione el tipo de zombie que desea eliminar:\n";
+    cout << "1. Zombies rapidos y agiles\n";
+    cout << "2. Zombies tanques\n";
+    cout << "3. Zombies inteligentes\n";
+    cout << "4. Zombies infectados por hongos\n";
+    cout << "5. Zombies bioluminiscentes\n";
+    cout << "----> ";
+    cin >> opcion;
 
-    std::string tipoZombie;
+    string tipoZombie;
     switch (opcion)
     {
     case 1:
@@ -539,16 +832,16 @@ void eliminarZombie()
         tipoZombie = "Zombie bioluminiscente";
         break;
     default:
-        std::cout << "Opción invalida.\n";
+        cout << "Opción invalida.\n";
         return;
     }
 
-    std::cout << "Seleccione una opcion:\n";
-    std::cout << "1. Eliminar numero especifico de zombies de este tipo\n";
-    std::cout << "2. Eliminar todos los zombies de este tipo\n";
+    cout << "Seleccione una opcion:\n";
+    cout << "1. Eliminar numero especifico de zombies de este tipo\n";
+    cout << "2. Eliminar todos los zombies de este tipo\n";
     int subopcion;
-    std::cout << "----> ";
-    std::cin >> subopcion;
+    cout << "----> ";
+    cin >> subopcion;
 
     if (subopcion == 1)
     {
@@ -562,18 +855,18 @@ void eliminarZombie()
 
         if (count == 0)
         {
-            std::cout << "No hay zombies de este tipo para eliminar.\n";
+            cout << "No hay zombies de este tipo para eliminar.\n";
             return;
         }
 
-        std::cout << "Hay " << count << " zombies de tipo " << tipoZombie << ".\n";
-        std::cout << "¿Cuantos desea eliminar? ";
-        std::cout << "----> ";
-        std::cin >> cantidadEliminar;
+        cout << "Hay " << count << " zombies de tipo " << tipoZombie << ".\n";
+        cout << "¿Cuantos desea eliminar? ";
+        cout << "----> ";
+        cin >> cantidadEliminar;
 
         if (cantidadEliminar > count)
         {
-            std::cout << "No puede eliminar mas de los existentes. Eliminando " << count << " zombies.\n";
+            cout << "No puede eliminar mas de los existentes. Eliminando " << count << " zombies.\n";
             cantidadEliminar = count;
         }
 
@@ -590,7 +883,7 @@ void eliminarZombie()
                 ++it; // Avanzar el iterador si no se elimina
             }
         }
-        std::cout << eliminados << " zombies de tipo " << tipoZombie << " eliminados.\n";
+        cout << eliminados << " zombies de tipo " << tipoZombie << " eliminados.\n";
     }
     else if (subopcion == 2)
     {
@@ -607,11 +900,11 @@ void eliminarZombie()
                 ++it; // Avanzar el iterador si no se elimina
             }
         }
-        std::cout << "Se eliminaron " << eliminados << " zombies de tipo " << tipoZombie << ".\n";
+        cout << "Se eliminaron " << eliminados << " zombies de tipo " << tipoZombie << ".\n";
     }
     else
     {
-        std::cout << "Opcion invalida.\n";
+        cout << "Opcion invalida.\n";
     }
 }
 
@@ -620,30 +913,30 @@ void eliminarAccesorio()
 {
     if (accesorios.size() == 0)
     {
-        std::cout << "No hay accesorios para eliminar.\n";
+        cout << "No hay accesorios para eliminar.\n";
         return;
     }
 
     // Mostrar accesorios disponibles para eliminar
-    std::cout << "Seleccione un accesorio para eliminar:\n";
+    cout << "Seleccione un accesorio para eliminar:\n";
     for (int i = 0; i < accesorios.size(); ++i)
     {
-        std::cout << i + 1 << ") " << accesorios[i]->nombre_accesorio
+        cout << i + 1 << ") " << accesorios[i]->nombre_accesorio
                   << " (Tipo: " << accesorios[i]->tipo << ")\n";
     }
 
     int opcion;
-    std::cin >> opcion;
+    cin >> opcion;
 
     if (opcion < 1 || opcion > accesorios.size())
     {
-        std::cout << "Opcion no valida.\n";
+        cout << "Opcion no valida.\n";
         return;
     }
 
     // Eliminar accesorio seleccionado
     accesorios.erase(accesorios.begin() + (opcion - 1));
-    std::cout << "Accesorio eliminado exitosamente.\n";
+    cout << "Accesorio eliminado exitosamente.\n";
 }
 
 // Función para asignar un accesorio creado a un soldado
@@ -651,28 +944,36 @@ void asignarAccesorioSoldado()
 {
     if (soldados.empty())
     {
-        std::cout << "No hay soldados para asignar accesorios.\n";
+        cout << "No hay soldados para asignar accesorios.\n";
         return;
     }
 
-    std::cout << "Seleccione el soldado al que desea asignar un accesorio:\n";
+    if (accesorios.empty())
+    {
+        cout << "No hay accesorios disponibles para asignar.\n";
+        return;
+    }
+
+    cout << "Seleccione el soldado al que desea asignar un accesorio:\n";
     for (int i = 0; i < soldados.size(); ++i)
     {
-        std::cout << i + 1 << ") " << soldados[i]->nombre_soldado << "\n";
+        cout << i + 1 << ") " << soldados[i]->nombre_soldado << "\n";
     }
 
     int opcion;
-    std::cin >> opcion;
+    cin >> opcion;
 
     if (opcion < 1 || opcion > soldados.size())
     {
-        std::cout << "Opcion no valida.\n";
+        cout << "Opcion no valida.\n";
         return;
     }
 
-    // Asigna el accesorio al soldado seleccionado
-    soldados[opcion - 1]->agregarAccesorioMochila(std::move(accesorios[opcion - 1]));
-    std::cout << "Accesorio asignado exitosamente al soldado.\n";
+    soldados[opcion - 1]->agregarAccesorioMochila(move(accesorios[0])); 
+    
+    accesorios.erase(accesorios.begin()); 
+
+    cout << "Accesorio asignado exitosamente al soldado.\n";
 }
 
 /* MENÚS INTERACTIVOS */
@@ -681,13 +982,13 @@ void menuSoldados()
     int opcion;
     do
     {
-        std::cout << "\n--- Menu de Soldados ---\n";
-        std::cout << "1. Agregar Soldado\n";
-        std::cout << "2. Mostrar Soldados\n";
-        std::cout << "3. Eliminar Soldado\n";
-        std::cout << "4. Volver\n";
-        std::cout << "----> ";
-        std::cin >> opcion;
+        cout << "\n--- Menu de Soldados ---\n";
+        cout << "1. Agregar Soldado\n";
+        cout << "2. Mostrar Soldados\n";
+        cout << "3. Eliminar Soldado\n";
+        cout << "4. Volver\n";
+        cout << "----> ";
+        cin >> opcion;
         system("cls");
 
         switch (opcion)
@@ -704,7 +1005,7 @@ void menuSoldados()
         case 4:
             return;
         default:
-            std::cout << "Opción inválida.\n";
+            cout << "Opción inválida.\n";
             break;
         }
     } while (opcion != 4);
@@ -715,13 +1016,13 @@ void menuZombies()
     int opcion;
     do
     {
-        std::cout << "\n--- Menu de Zombies ---\n";
-        std::cout << "1. Agregar Zombie\n";
-        std::cout << "2. Mostrar Zombies\n";
-        std::cout << "3. Eliminar Zombie\n";
-        std::cout << "4. Volver\n";
-        std::cout << "----> ";
-        std::cin >> opcion;
+        cout << "\n--- Menu de Zombies ---\n";
+        cout << "1. Agregar Zombie\n";
+        cout << "2. Mostrar Zombies\n";
+        cout << "3. Eliminar Zombie\n";
+        cout << "4. Volver\n";
+        cout << "----> ";
+        cin >> opcion;
         system("cls");
 
         switch (opcion)
@@ -738,7 +1039,7 @@ void menuZombies()
         case 4:
             return;
         default:
-            std::cout << "Opcion invalida.\n";
+            cout << "Opcion invalida.\n";
             break;
         }
     } while (opcion != 4);
@@ -749,14 +1050,14 @@ void menuAccesorios()
     int opcion;
     do
     {
-        std::cout << "\n--- Menu de Accesorios ---\n";
-        std::cout << "1. Agregar Accesorio\n";
-        std::cout << "2. Mostrar Accesorios\n";
-        std::cout << "3. Eliminar Accesorio\n";
-        std::cout << "4. Asignar Accesorio a Soldado\n";
-        std::cout << "5. Volver\n";
-        std::cout << "----> ";
-        std::cin >> opcion;
+        cout << "\n--- Menu de Accesorios ---\n";
+        cout << "1. Agregar Accesorio\n";
+        cout << "2. Mostrar Accesorios\n";
+        cout << "3. Eliminar Accesorio\n";
+        cout << "4. Asignar Accesorio a Soldado\n"; 
+        cout << "5. Volver\n";
+        cout << "----> ";
+        cin >> opcion;
         system("cls");
 
         switch (opcion)
@@ -772,65 +1073,72 @@ void menuAccesorios()
             break;
         case 4:
             asignarAccesorioSoldado();
+            break;
         case 5:
             return;
         default:
-            std::cout << "Opcion invalida.\n";
+            cout << "Opcion invalida.\n";
             break;
         }
     } while (opcion != 5);
 }
 
-void menuPrincipal()
-{
+void menuPrincipal() {
+    MapaMetro mapa; 
     int opcion;
-    do
-    {
-        std::cout << "\n--- Menu Principal ---\n";
-        std::cout << "1. Gestionar Soldados\n";
-        std::cout << "2. Gestionar Zombies\n";
-        std::cout << "3. Gestionar Accesorios\n";
-        std::cout << "4. Salir\n";
-        std::cout << "Ingrese una opcion: ";
-        std::cin >> opcion;
-        system("cls");
+    
+    do {
+        cout << "\n--- Menu Principal ---\n";
+        cout << "1. Gestionar Soldados\n";
+        cout << "2. Gestionar Zombies\n";
+        cout << "3. Gestionar Accesorios\n";
+        cout << "4. Gestionar Equipos\n";
+        cout << "5. Gestionar Mapas\n";
+        cout << "6. Salir\n";
+        cout << "Ingrese una opcion: ";
+        cin >> opcion;
+        system("cls"); 
 
-        switch (opcion)
-        {
-        case 1:
-            menuSoldados();
-            break;
-        case 2:
-            menuZombies();
-            break;
-        case 3:
-            menuAccesorios();
-            break;
-        case 4:
-            std::cout << "Saliendo del programa.\n";
-            break;
-        default:
-            std::cout << "Opcion invalida.\n";
-            break;
+        switch (opcion) {
+            case 1:
+                menuSoldados();
+                break;
+            case 2:
+                menuZombies();
+                break;
+            case 3:
+                menuAccesorios();
+                break;
+            case 4:
+                menuEquipos();
+                break;
+            case 5:
+                menuMapa(mapa); 
+            case 6:
+                cout << "Saliendo del programa.\n";
+                break;
+            default:
+                cout << "Opcion invalida.\n";
+                break;
         }
-    } while (opcion != 4);
+    } while (opcion != 6);
 }
 
 // Bienvenida al programa
-void Bienvenida(const std::string &fileName)
+void Bienvenida(const string &fileName)
 {
-    std::ifstream inputFile(fileName); // Abrir el archivo
+    ifstream inputFile(fileName); // Abrir el archivo
 
     if (!inputFile)
     {
-        std::cerr << "Error: No se pudo abrir el archivo " << fileName << std::endl;
+        cerr << "Error: No se pudo abrir el archivo " << fileName << endl;
         return;
     }
 
-    std::string linea;
-    while (std::getline(inputFile, linea)) // Leer cada línea del archivo
+    string linea;
+    while (getline(inputFile, linea)) // Leer cada línea del archivo
     {
-        std::cout << linea << std::endl; // Imprimir cada línea en el terminal
+        cout << linea << endl; // Imprimir cada línea en el terminal
     }
 
     inputFile.close(); // Cerrar el archivo
@@ -839,15 +1147,15 @@ void Bienvenida(const std::string &fileName)
 int main()
 {
     char continuar;
-    while (continuar != 'X')
+    while (continuar != 'X' && continuar != 'x')
     {
-        std::string filename = "ucab_z.txt";
+        string filename = "ucab_z.txt";
         Bienvenida(filename);
-        std::cout << "PRESIONA X PARA CONTINUAR --> ";
-        std::cin >> continuar;
-        std::system("cls");
+        cout << "PRESIONA X PARA CONTINUAR --> ";
+        cin >> continuar;
+        system("cls"); // Limpia la consola
     }
 
-    menuPrincipal(); // Iniciar el menú principal
+    menuPrincipal(); // Iniciar el men� principal
     return 0;
 }
