@@ -1,0 +1,1204 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <memory>    // Para punteros inteligentes (unique_ptr)
+#include <algorithm> // Para std::find_if
+
+/* HECHO POR:
+    CHRISTIAN VILERA
+    ISAAC RODRIGUEZ
+    ARNALDO VELASQUEZ
+*/
+
+using namespace std;
+
+/* COMPONENTES */
+// 1) Estructura para accesorios
+struct Accesorios
+{
+    string nombre_accesorio;
+    string tipo;
+    int valor;
+    int municiones;
+    int duracion;
+    bool mun_especial;
+
+    Accesorios(string nombre, string tipo, int val, int mun, int dur, bool m_esp) // Constructor
+        : nombre_accesorio(nombre), tipo(tipo), valor(val), municiones(mun), duracion(dur), mun_especial(m_esp)
+    {
+    }
+};
+
+// 2) Estructura para zombies
+struct Zombies
+{
+    string nombre_zombie;
+    int ataque;
+    int velocidad;
+    int durabilidad;
+    bool poder_especial;
+
+    Zombies(string nombre, int atk, int vcd, int dur, bool pwr) // Constructor
+        : nombre_zombie(nombre), ataque(atk), velocidad(vcd), durabilidad(dur), poder_especial(pwr)
+    {
+    }
+};
+
+// 3) Estructura para la mochila
+struct Mochila
+{
+    string propietario;
+    vector<unique_ptr<Accesorios>> accesorios; // Hasta 3 accesorios
+
+    Mochila(string d) : propietario(d) {}
+
+    // Método para agregar accesorios a la mochila
+    bool agregarAccesorio(unique_ptr<Accesorios> accesorio)
+    {
+        if (accesorios.size() < 3)
+        {
+            accesorios.push_back(move(accesorio));
+            return true;
+        }
+        else
+        {
+            cout << "Mochila llena, no se puede agregar mas accesorios.\n";
+            return false;
+        }
+    }
+
+    // Método para mostrar los accesorios en la mochila
+    void mostrarAccesorios() const
+    {
+        cout << "Mochila de " << propietario << " contiene:\n";
+        for (const auto &accesorio : accesorios)
+        {
+            cout << "- " << accesorio->nombre_accesorio << " (Tipo: " << accesorio->tipo
+                 << ", Valor: " << accesorio->valor
+                 << ", Municiones: " << accesorio->municiones
+                 << ", Duracion: " << accesorio->duracion
+                 << ", Municion Especial: " << (accesorio->mun_especial ? "Si" : "No") << ")\n";
+        }
+    }
+};
+
+// 4) Estructura para soldados
+struct Soldado
+{
+    string nombre_soldado;
+    const int salud = 100; // Salud constante
+    Mochila mochila;
+
+    Soldado(string nombre)
+        : nombre_soldado(nombre), mochila(nombre) {} // Constructor inicializa mochila
+
+    // Método para asignar un accesorio a la mochila
+    void agregarAccesorioMochila(unique_ptr<Accesorios> accesorio)
+    {
+        if (!mochila.agregarAccesorio(move(accesorio)))
+        {
+            cout << "No se pudo agregar el accesorio a la mochila.\n";
+        }
+    }
+
+    // Método para mostrar el soldado y su mochila
+    void mostrarSoldado() const
+    {
+        cout << "Soldado: " << nombre_soldado << "\nSalud: " << salud << "\n"
+             << endl;
+        mochila.mostrarAccesorios();
+    }
+};
+
+// 5)Estructura para los equipos
+struct Equipo
+{
+    string nombre_equipo;
+    vector<shared_ptr<Soldado>> soldados; // Lista de soldados en el equipo
+
+    Equipo(string nombre) : nombre_equipo(nombre) {}
+
+    // Método para mostrar los soldados en el equipo
+    void mostrarSoldados() const
+    {
+        cout << "Equipo: " << nombre_equipo << "\n";
+        if (soldados.empty())
+        {
+            cout << "No hay soldados en este equipo.\n";
+            return;
+        }
+        for (const auto &soldado : soldados)
+        {
+            cout << "- " << soldado->nombre_soldado << "\n";
+        }
+    }
+};
+
+// 6) Estructura para las selecciones del metro en el mapa del juego
+struct SeccionMetro
+{
+    string nombre;
+    bool hayZombies;
+    bool hayAccesorios;
+    SeccionMetro *siguiente;
+
+    SeccionMetro(const string &nombre, bool zombies, bool accesorios)
+        : nombre(nombre), hayZombies(zombies), hayAccesorios(accesorios), siguiente(nullptr) {}
+};
+
+class MapaMetro
+{
+private:
+    SeccionMetro *inicio;
+
+public:
+    MapaMetro() : inicio(nullptr) {}
+
+    void agregarSeccion(const string &nombre, bool hayZombies, bool hayAccesorios)
+    {
+        SeccionMetro *nuevaSeccion = new SeccionMetro(nombre, hayZombies, hayAccesorios);
+        if (!inicio)
+        {
+            inicio = nuevaSeccion;
+        }
+        else
+        {
+            SeccionMetro *temp = inicio;
+            while (temp->siguiente)
+            {
+                temp = temp->siguiente;
+            }
+            temp->siguiente = nuevaSeccion;
+        }
+    }
+
+    bool eliminarSeccion(const string &nombre)
+    {
+        if (!inicio)
+            return false;
+
+        if (inicio->nombre == nombre)
+        {
+            SeccionMetro *temp = inicio;
+            inicio = inicio->siguiente;
+            delete temp;
+            return true;
+        }
+
+        SeccionMetro *actual = inicio;
+        while (actual->siguiente && actual->siguiente->nombre != nombre)
+        {
+            actual = actual->siguiente;
+        }
+
+        if (actual->siguiente)
+        {
+            SeccionMetro *temp = actual->siguiente;
+            actual->siguiente = temp->siguiente;
+            delete temp;
+            return true;
+        }
+
+        return false; // No se encontró la sección
+    }
+
+    bool editarSeccion(const string &nombre)
+    {
+        SeccionMetro *actual = inicio;
+        while (actual)
+        {
+            if (actual->nombre == nombre)
+            {
+                cout << "Ingrese el nuevo nombre de la seccion: ";
+                cin.ignore();
+                getline(cin, actual->nombre);
+                cout << "¿Hay zombies en esta seccion? (1 = Si, 0 = No): ";
+                cin >> actual->hayZombies;
+                cout << "¿Hay accesorios en esta seccion? (1 = Si, 0 = No): ";
+                cin >> actual->hayAccesorios;
+                return true;
+            }
+            actual = actual->siguiente;
+        }
+        return false;
+    }
+
+    void mostrarMapa()
+    {
+        SeccionMetro *temp = inicio;
+        while (temp)
+        {
+            cout << "Seccion: " << temp->nombre
+                 << (temp->hayZombies ? " - Cuidado! Zombies presentes" : " - Seguro")
+                 << (temp->hayAccesorios ? " - Hay accesorios aqui" : "") << endl;
+            temp = temp->siguiente;
+        }
+    }
+
+    ~MapaMetro()
+    {
+        while (inicio)
+        {
+            SeccionMetro *temp = inicio;
+            inicio = inicio->siguiente;
+            delete temp;
+        }
+    }
+};
+
+// Menú para gestionar el mapa
+void menuMapa(MapaMetro &mapa)
+{
+    int opcion;
+    string nombre;
+    bool hayZombies;
+    bool hayAccesorios;
+
+    while (opcion != 5)
+    {
+        cout << "\n--- Menu de Manejo de Mapa ---\n";
+        cout << "1. Agregar Seccion\n";
+        cout << "2. Eliminar Seccion\n";
+        cout << "3. Editar Seccion\n";
+        cout << "4. Mostrar Mapa\n";
+        cout << "5. Volver al Menu Principal\n";
+        cout << "Seleccione una opcion: ";
+        cin >> opcion;
+        system("cls");
+
+        switch (opcion)
+        {
+        case 1:
+            cout << "Ingrese el nombre de la seccion: ";
+            cin.ignore();
+            getline(cin, nombre);
+            cout << "Hay zombies en esta seccion? (1 = Si, 0 = No): ";
+            cin >> hayZombies;
+            cout << "Hay accesorios en esta seccion? (1 = Si, 0 = No): ";
+            cin >> hayAccesorios;
+            mapa.agregarSeccion(nombre, hayZombies, hayAccesorios);
+            cout << "Seccion agregada correctamente.\n";
+            break;
+        case 2:
+            cout << "Ingrese el nombre de la seccion a eliminar: ";
+            cin.ignore();
+            getline(cin, nombre);
+            if (mapa.eliminarSeccion(nombre))
+            {
+                cout << "Seccion eliminada correctamente.\n";
+            }
+            else
+            {
+                cout << "Seccion no encontrada.\n";
+            }
+            break;
+        case 3:
+            cout << "Ingrese el nombre de la seccion a editar: ";
+            cin.ignore();
+            getline(cin, nombre);
+            if (mapa.editarSeccion(nombre))
+            {
+                cout << "Seccion editada correctamente.\n";
+            }
+            else
+            {
+                cout << "Seccion no encontrada.\n";
+            }
+            break;
+        case 4:
+            mapa.mostrarMapa();
+            break;
+        case 5:
+            cout << "Volviendo al menu principal...\n";
+            break;
+        default:
+            cout << "Opcion no valida.\n";
+            break;
+        }
+    }
+}
+
+/* FUNCIONES PARA GESTIONAR SOLDADOS, ZOMBIES, Y ACCESORIOS */
+
+// Vectores para almacenar soldados, zombies, y accesorios
+vector<shared_ptr<Soldado>> soldados;
+vector<unique_ptr<Zombies>> zombies;
+vector<unique_ptr<Accesorios>> accesorios;
+vector<unique_ptr<Equipo>> equipos;
+
+// Funcion crear equipo
+void crearEquipo()
+{
+    string nombre;
+    while (true)
+    {
+        cout << "Ingrese el nombre del equipo (minimo 10 caracteres): ";
+        cin.ignore();
+        getline(cin, nombre);
+
+        if (nombre.length() <= 10)
+        {
+            equipos.push_back(make_unique<Equipo>(nombre));
+            cout << "Equipo " << nombre << " creado.\n";
+            break;
+        }
+        else
+        {
+            cout << "Error: El nombre del equipo debe tener al menos 10 caracteres. Inténtelo de nuevo.\n";
+        }
+    }
+}
+
+// Funcion agregar soldado a equipo
+void asignarSoldadoAEquipo()
+{
+    if (soldados.empty())
+    {
+        cout << "No hay soldados disponibles para asignar.\n";
+        return;
+    }
+
+    if (equipos.empty())
+    {
+        cout << "No hay equipos creados. Primero crea un equipo.\n"
+             << endl;
+        return;
+    }
+
+    cout << "Seleccione un soldado para asignar:\n";
+    for (int i = 0; i < soldados.size(); ++i)
+    {
+        cout << i + 1 << ") " << soldados[i]->nombre_soldado << "\n";
+    }
+
+    int opcionSoldado;
+    cin >> opcionSoldado;
+
+    if (opcionSoldado < 1 || opcionSoldado > soldados.size())
+    {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    cout << "Seleccione un equipo al que desea asignar el soldado:\n";
+    for (int i = 0; i < equipos.size(); ++i)
+    {
+        cout << i + 1 << ") " << equipos[i]->nombre_equipo << "\n";
+    }
+
+    int opcionEquipo;
+    cin >> opcionEquipo;
+
+    if (opcionEquipo < 1 || opcionEquipo > equipos.size())
+    {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    // Asignar el soldado al equipo seleccionado
+    equipos[opcionEquipo - 1]->soldados.push_back(soldados[opcionSoldado - 1]);
+    cout << "Soldado " << soldados[opcionSoldado - 1]->nombre_soldado << " asignado al equipo " << equipos[opcionEquipo - 1]->nombre_equipo << ".\n";
+}
+
+// Mostras equipos
+void mostrarEquipos()
+{
+    if (equipos.empty())
+    {
+        cout << "No hay equipos creados.\n";
+        return;
+    }
+
+    for (const auto &equipo : equipos)
+    {
+        equipo->mostrarSoldados();
+    }
+}
+
+// Menu equipos
+void menuEquipos()
+{
+    int opcion;
+    do
+    {
+        cout << "\n--- Menu de Equipos ---\n";
+        cout << "1. Crear Equipo\n";
+        cout << "2. Asignar Soldado a Equipo\n";
+        cout << "3. Mostrar Equipos\n";
+        cout << "4. Volver\n";
+        cout << "----> ";
+        cin >> opcion;
+        system("cls");
+
+        switch (opcion)
+        {
+        case 1:
+            crearEquipo();
+            break;
+        case 2:
+            asignarSoldadoAEquipo();
+            break;
+        case 3:
+            mostrarEquipos();
+            break;
+        case 4:
+            return;
+        default:
+            cout << "Opción inválida.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
+
+// Función para agregar soldado
+void agregarSoldado()
+{
+    string nombre;
+    cout << "Ingrese el nombre del soldado: ";
+    cin >> nombre;
+    soldados.push_back(make_shared<Soldado>(nombre));
+    cout << "Soldado " << nombre << " agregado.\n";
+}
+
+// Función para agregar un zombie
+void agregarZombie()
+{
+    int opcion;
+    cout << "Seleccione el tipo de zombie a agregar:\n";
+    cout << "1. Zombies rapidos y agiles\n";
+    cout << "2. Zombies tanques\n";
+    cout << "3. Zombies inteligentes\n";
+    cout << "4. Zombies infectados por hongos\n";
+    cout << "5. Zombies bioluminiscentes\n";
+    cout << "----> ";
+    cin >> opcion;
+
+    unique_ptr<Zombies> nuevoZombie;
+
+    switch (opcion)
+    {
+    case 1:
+        nuevoZombie = make_unique<Zombies>("Zombie rapido y agil", 20, 90, 30, false);
+        cout << "Zombie rapido y agil agregado.\n";
+        break;
+    case 2:
+        nuevoZombie = make_unique<Zombies>("Zombie tanque", 70, 20, 100, false);
+        cout << "Zombie tanque agregado.\n";
+        break;
+    case 3:
+        nuevoZombie = make_unique<Zombies>("Zombie inteligente", 40, 50, 50, true);
+        cout << "Zombie inteligente agregado.\n";
+        break;
+    case 4:
+        nuevoZombie = make_unique<Zombies>("Zombie infectado por hongos", 60, 30, 80, true);
+        cout << "Zombie infectado por hongos agregado.\n";
+        break;
+    case 5:
+        nuevoZombie = make_unique<Zombies>("Zombie bioluminiscente", 50, 60, 70, true);
+        cout << "Zombie bioluminiscente agregado.\n";
+        break;
+    default:
+        cout << "Opcion invalida. No se agrego ningun zombie.\n";
+        return;
+    }
+
+    zombies.push_back(move(nuevoZombie)); // Agregar el zombie a la lista
+}
+
+// Función para agregar un accesorio (arma) al soldado
+unique_ptr<Accesorios> agregarAccesorio()
+{
+    int categoria;
+    cout << "Seleccione la categoria de armas:\n";
+    cout << "1. Armas a distancia\n";
+    cout << "2. Armas cuerpo a cuerpo\n";
+    cout << "3. Armas improvisadas\n";
+    cout << "----> ";
+    cin >> categoria;
+
+    int subcategoria, opcion;
+    string nombre_accesorio, tipo;
+    int valor, municiones, duracion;
+    bool mun_especial;
+
+    switch (categoria)
+    {
+    case 1:
+        cout << "Seleccione el tipo de arma a distancia:\n";
+        cout << "1. Armas de fuego\n";
+        cout << "2. Armas arrojadizas\n";
+        cout << "3. Armas de proyectiles\n";
+        cout << "----> ";
+        cin >> subcategoria;
+
+        if (subcategoria == 1) // Armas de fuego
+        {
+            cout << "1. Pistolas\n2. Escopetas\n3. Fusiles de asalto\n4. Rifles de francotirador\n";
+            cout << "----> ";
+            cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Pistola";
+                valor = 30;
+                municiones = 15;
+                duracion = 100;
+                tipo = "Arma de fuego";
+                mun_especial = false;
+                break;
+            case 2:
+                nombre_accesorio = "Escopeta";
+                valor = 50;
+                municiones = 8;
+                duracion = 80;
+                tipo = "Arma de fuego";
+                mun_especial = false;
+                break;
+            case 3:
+                nombre_accesorio = "Fusil de asalto";
+                valor = 70;
+                municiones = 30;
+                duracion = 60;
+                tipo = "Arma de fuego";
+                mun_especial = false;
+                break;
+            case 4:
+                nombre_accesorio = "Rifle de francotirador";
+                valor = 90;
+                municiones = 5;
+                duracion = 50;
+                tipo = "Arma de fuego";
+                mun_especial = false;
+                break;
+            }
+        }
+        else if (subcategoria == 2) // Armas arrojadizas
+        {
+            cout << "1. Granadas\n2. Cocteles Molotov\n";
+            cout << "----> ";
+            cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Granada";
+                valor = 40;
+                municiones = 3;
+                duracion = 1;
+                tipo = "Arma arrojadiza";
+                mun_especial = false;
+                break;
+            case 2:
+                nombre_accesorio = "Coctel Molotov";
+                valor = 45;
+                municiones = 2;
+                duracion = 1;
+                tipo = "Arma arrojadiza";
+                mun_especial = false;
+                break;
+            }
+        }
+        else if (subcategoria == 3) // Armas de proyectiles
+        {
+            cout << "1. Ballestas\n2. Tirachinas\n";
+            cout << "----> ";
+            cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Ballesta";
+                valor = 60;
+                municiones = 10;
+                duracion = 70;
+                tipo = "Arma de proyectiles";
+                mun_especial = true;
+                break;
+            case 2:
+                nombre_accesorio = "Tirachinas";
+                valor = 20;
+                municiones = 20;
+                duracion = 100;
+                tipo = "Arma de proyectiles";
+                mun_especial = true;
+                break;
+            }
+        }
+        break;
+
+    case 2:
+        cout << "Seleccione el tipo de arma cuerpo a cuerpo:\n";
+        cout << "1. Armas blancas\n2. Armas contundentes\n";
+        cout << "----> ";
+        cin >> subcategoria;
+
+        if (subcategoria == 1) // Armas blancas
+        {
+            cout << "1. Cuchillo\n2. Machete\n3. Espada\n";
+            cout << "----> ";
+            cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Cuchillo";
+                valor = 25;
+                municiones = 0;
+                duracion = 100;
+                tipo = "Arma blanca";
+                break;
+            case 2:
+                nombre_accesorio = "Machete";
+                valor = 40;
+                municiones = 0;
+                duracion = 80;
+                tipo = "Arma blanca";
+                break;
+            case 3:
+                nombre_accesorio = "Espada";
+                valor = 60;
+                municiones = 0;
+                duracion = 70;
+                tipo = "Arma blanca";
+                break;
+            }
+        }
+        else if (subcategoria == 2) // Armas contundentes
+        {
+            cout << "1. Bate de beisbol\n2. Martillo\n3. Tubería\n";
+            cout << "----> ";
+            cin >> opcion;
+            system("cls");
+
+            switch (opcion)
+            {
+            case 1:
+                nombre_accesorio = "Bate de beisbol";
+                valor = 35;
+                municiones = 0;
+                duracion = 90;
+                tipo = "Arma contundente";
+                mun_especial = false;
+                break;
+            case 2:
+                nombre_accesorio = "Martillo";
+                valor = 50;
+                municiones = 0;
+                duracion = 75;
+                tipo = "Arma contundente";
+                mun_especial = false;
+                break;
+            case 3:
+                nombre_accesorio = "Tuberia";
+                valor = 45;
+                municiones = 0;
+                duracion = 60;
+                tipo = "Arma contundente";
+                mun_especial = false;
+                break;
+            }
+        }
+        break;
+
+    case 3:
+        cout << "Seleccione el tipo de arma improvisada:\n";
+        cout << "1. Objetos punzantes\n2. Objetos contundentes\n3. Armas incendiarias\n4. Trampas\n";
+        cout << "----> ";
+        cin >> opcion;
+
+        switch (opcion)
+        {
+        case 1:
+            nombre_accesorio = "Objetos punzantes (clavos, tijeras, destornilladores)";
+            valor = 20;
+            municiones = 0;
+            duracion = 50;
+            tipo = "Arma improvisada";
+            mun_especial = false;
+            break;
+        case 2:
+            nombre_accesorio = "Objetos contundentes (ladrillos, rocas, palos)";
+            valor = 15;
+            municiones = 0;
+            duracion = 40;
+            tipo = "Arma improvisada";
+            mun_especial = false;
+            break;
+        case 3:
+            nombre_accesorio = "Armas incendiarias (fósforos, líquido inflamable)";
+            valor = 35;
+            municiones = 0;
+            duracion = 30;
+            tipo = "Arma improvisada";
+            mun_especial = false;
+            break;
+        case 4:
+            nombre_accesorio = "Trampas";
+            valor = 50;
+            municiones = 0;
+            duracion = 60;
+            tipo = "Arma improvisada";
+            mun_especial = false;
+            break;
+        }
+        break;
+
+    default:
+        cout << "Opcion invalida.\n";
+        return nullptr;
+    }
+    return make_unique<Accesorios>(nombre_accesorio, tipo, valor, municiones, duracion, mun_especial);
+}
+
+// Función para crear un accesorio y añadirlo al vector global
+void crearAccesorio()
+{
+    auto accesorio = agregarAccesorio(); // Crea el accesorio usando la función agregarAccesorio
+    if (accesorio)
+    {                                          // Si el accesorio es válido (no es nulo)
+        accesorios.push_back(move(accesorio)); // Se añade al vector global
+        cout << "Accesorio creado y agregado exitosamente.\n";
+    }
+    else
+    {
+        cout << "No se pudo crear el accesorio.\n";
+    }
+}
+
+// Función para mostrar soldado
+void mostrarSoldados()
+{
+    cout << "Soldados disponibles:\n";
+    for (const auto &soldado : soldados)
+    {
+        soldado->mostrarSoldado();
+    }
+}
+
+// Función para mostrar zombies
+void mostrarZombies()
+{
+    cout << "Zombies disponibles:\n";
+    for (const auto &zombie : zombies)
+    {
+        cout << "Zombie: " << zombie->nombre_zombie << " || Ataque: " << zombie->ataque << " | Velocidad: " << zombie->velocidad << " | Durabilidad: " << zombie->durabilidad << "\n";
+    }
+}
+
+// Función para mostrar accesorios
+void mostrarAccesorios()
+{
+    if (accesorios.empty())
+    { // Verifica si el vector de accesorios está vacío
+        cout << "No hay accesorios creados.\n";
+        return;
+    }
+
+    cout << "Accesorios disponibles:\n";
+    for (size_t i = 0; i < accesorios.size(); ++i)
+    {
+        cout << i + 1 << ") " << accesorios[i]->nombre_accesorio
+             << " (Tipo: " << accesorios[i]->tipo
+             << ", Valor: " << accesorios[i]->valor
+             << ", Municiones: " << accesorios[i]->municiones
+             << ", Duracion: " << accesorios[i]->duracion
+             << ", Municion Especial: " << (accesorios[i]->mun_especial ? "Si" : "No") << ")\n";
+    }
+}
+
+// Función para eliminar un soldado
+void eliminarSoldado()
+{
+    string nombre;
+    cout << "Ingrese el nombre del soldado a eliminar: ";
+    cin >> nombre;
+
+    auto it = find_if(soldados.begin(), soldados.end(),
+                      [&nombre](const shared_ptr<Soldado> &soldado)
+                      { return soldado->nombre_soldado == nombre; });
+
+    if (it != soldados.end())
+    {
+        soldados.erase(it);
+        cout << "Soldado " << nombre << " eliminado.\n";
+    }
+    else
+    {
+        cout << "Soldado no encontrado.\n";
+    }
+}
+
+// Función para eliminar un zombie
+void eliminarZombie()
+{
+    if (zombies.empty())
+    {
+        cout << "No hay zombies para eliminar.\n";
+        return;
+    }
+
+    int opcion;
+    cout << "Seleccione el tipo de zombie que desea eliminar:\n";
+    cout << "1. Zombies rapidos y agiles\n";
+    cout << "2. Zombies tanques\n";
+    cout << "3. Zombies inteligentes\n";
+    cout << "4. Zombies infectados por hongos\n";
+    cout << "5. Zombies bioluminiscentes\n";
+    cout << "----> ";
+    cin >> opcion;
+
+    string tipoZombie;
+    switch (opcion)
+    {
+    case 1:
+        tipoZombie = "Zombie rapido y agil";
+        break;
+    case 2:
+        tipoZombie = "Zombie tanque";
+        break;
+    case 3:
+        tipoZombie = "Zombie inteligente";
+        break;
+    case 4:
+        tipoZombie = "Zombie infectado por hongos";
+        break;
+    case 5:
+        tipoZombie = "Zombie bioluminiscente";
+        break;
+    default:
+        cout << "Opción invalida.\n";
+        return;
+    }
+
+    cout << "Seleccione una opcion:\n";
+    cout << "1. Eliminar numero especifico de zombies de este tipo\n";
+    cout << "2. Eliminar todos los zombies de este tipo\n";
+    int subopcion;
+    cout << "----> ";
+    cin >> subopcion;
+
+    if (subopcion == 1)
+    {
+        int cantidadEliminar;
+        int count = 0;
+        for (const auto &zombie : zombies)
+        {
+            if (zombie->nombre_zombie == tipoZombie)
+                count++;
+        }
+
+        if (count == 0)
+        {
+            cout << "No hay zombies de este tipo para eliminar.\n";
+            return;
+        }
+
+        cout << "Hay " << count << " zombies de tipo " << tipoZombie << ".\n";
+        cout << "¿Cuantos desea eliminar? ";
+        cout << "----> ";
+        cin >> cantidadEliminar;
+
+        if (cantidadEliminar > count)
+        {
+            cout << "No puede eliminar mas de los existentes. Eliminando " << count << " zombies.\n";
+            cantidadEliminar = count;
+        }
+
+        int eliminados = 0;
+        for (auto it = zombies.begin(); it != zombies.end() && eliminados < cantidadEliminar;)
+        {
+            if ((*it)->nombre_zombie == tipoZombie)
+            {
+                it = zombies.erase(it); // Eliminar el zombie y avanzar el iterador
+                eliminados++;
+            }
+            else
+            {
+                ++it; // Avanzar el iterador si no se elimina
+            }
+        }
+        cout << eliminados << " zombies de tipo " << tipoZombie << " eliminados.\n";
+    }
+    else if (subopcion == 2)
+    {
+        int eliminados = 0;
+        for (auto it = zombies.begin(); it != zombies.end();)
+        {
+            if ((*it)->nombre_zombie == tipoZombie)
+            {
+                it = zombies.erase(it); // Eliminar el zombie y avanzar el iterador
+                eliminados++;
+            }
+            else
+            {
+                ++it; // Avanzar el iterador si no se elimina
+            }
+        }
+        cout << "Se eliminaron " << eliminados << " zombies de tipo " << tipoZombie << ".\n";
+    }
+    else
+    {
+        cout << "Opcion invalida.\n";
+    }
+}
+
+// Función para eliminar un accesorio
+void eliminarAccesorio()
+{
+    if (accesorios.size() == 0)
+    {
+        cout << "No hay accesorios para eliminar.\n";
+        return;
+    }
+
+    // Mostrar accesorios disponibles para eliminar
+    cout << "Seleccione un accesorio para eliminar:\n";
+    for (int i = 0; i < accesorios.size(); ++i)
+    {
+        cout << i + 1 << ") " << accesorios[i]->nombre_accesorio
+             << " (Tipo: " << accesorios[i]->tipo << ")\n";
+    }
+
+    int opcion;
+    cin >> opcion;
+
+    if (opcion < 1 || opcion > accesorios.size())
+    {
+        cout << "Opcion no valida.\n";
+        return;
+    }
+
+    // Eliminar accesorio seleccionado
+    accesorios.erase(accesorios.begin() + (opcion - 1));
+    cout << "Accesorio eliminado exitosamente.\n";
+}
+
+// Función para asignar un accesorio creado a un soldado
+void asignarAccesorioSoldado()
+{
+    if (soldados.empty())
+    {
+        cout << "No hay soldados para asignar accesorios.\n";
+        return;
+    }
+
+    if (accesorios.empty())
+    {
+        cout << "No hay accesorios disponibles para asignar.\n";
+        return;
+    }
+
+    cout << "Seleccione el soldado al que desea asignar un accesorio:\n";
+    for (int i = 0; i < soldados.size(); ++i)
+    {
+        cout << i + 1 << ") " << soldados[i]->nombre_soldado << "\n";
+    }
+
+    int opcion;
+    cin >> opcion;
+
+    if (opcion < 1 || opcion > soldados.size())
+    {
+        cout << "Opcion no valida.\n";
+        return;
+    }
+
+    soldados[opcion - 1]->agregarAccesorioMochila(move(accesorios[0]));
+
+    accesorios.erase(accesorios.begin());
+
+    cout << "Accesorio asignado exitosamente al soldado.\n";
+}
+
+/* MENÚS INTERACTIVOS */
+void menuSoldados()
+{
+    int opcion;
+    do
+    {
+        cout << "\n--- Menu de Soldados ---\n";
+        cout << "1. Agregar Soldado\n";
+        cout << "2. Mostrar Soldados\n";
+        cout << "3. Eliminar Soldado\n";
+        cout << "4. Volver\n";
+        cout << "----> ";
+        cin >> opcion;
+        system("cls");
+
+        switch (opcion)
+        {
+        case 1:
+            agregarSoldado();
+            break;
+        case 2:
+            mostrarSoldados();
+            break;
+        case 3:
+            eliminarSoldado();
+            break;
+        case 4:
+            return;
+        default:
+            cout << "Opción inválida.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
+
+void menuZombies()
+{
+    int opcion;
+    do
+    {
+        cout << "\n--- Menu de Zombies ---\n";
+        cout << "1. Agregar Zombie\n";
+        cout << "2. Mostrar Zombies\n";
+        cout << "3. Eliminar Zombie\n";
+        cout << "4. Volver\n";
+        cout << "----> ";
+        cin >> opcion;
+        system("cls");
+
+        switch (opcion)
+        {
+        case 1:
+            agregarZombie();
+            break;
+        case 2:
+            mostrarZombies();
+            break;
+        case 3:
+            eliminarZombie();
+            break;
+        case 4:
+            return;
+        default:
+            cout << "Opcion invalida.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
+
+void menuAccesorios()
+{
+    int opcion;
+    do
+    {
+        cout << "\n--- Menu de Accesorios ---\n";
+        cout << "1. Agregar Accesorio\n";
+        cout << "2. Mostrar Accesorios\n";
+        cout << "3. Eliminar Accesorio\n";
+        cout << "4. Asignar Accesorio a Soldado\n";
+        cout << "5. Volver\n";
+        cout << "----> ";
+        cin >> opcion;
+        system("cls");
+
+        switch (opcion)
+        {
+        case 1:
+            crearAccesorio();
+            break;
+        case 2:
+            mostrarAccesorios();
+            break;
+        case 3:
+            eliminarAccesorio();
+            break;
+        case 4:
+            asignarAccesorioSoldado();
+            break;
+        case 5:
+            return;
+        default:
+            cout << "Opcion invalida.\n";
+            break;
+        }
+    } while (opcion != 5);
+}
+
+void menuPrincipal()
+{
+    MapaMetro mapa;
+    int opcion;
+
+    do
+    {
+        cout << "\n--- Menu Principal ---\n";
+        cout << "1. Gestionar Soldados\n";
+        cout << "2. Gestionar Zombies\n";
+        cout << "3. Gestionar Accesorios\n";
+        cout << "4. Gestionar Equipos\n";
+        cout << "5. Gestionar Mapas\n";
+        cout << "6. Salir\n";
+        cout << "Ingrese una opcion: ";
+        cin >> opcion;
+        system("cls");
+
+        switch (opcion)
+        {
+        case 1:
+            menuSoldados();
+            break;
+        case 2:
+            menuZombies();
+            break;
+        case 3:
+            menuAccesorios();
+            break;
+        case 4:
+            menuEquipos();
+            break;
+        case 5:
+            menuMapa(mapa);
+        case 6:
+            cout << "Saliendo del programa.\n";
+            break;
+        default:
+            cout << "Opcion invalida.\n";
+            break;
+        }
+    } while (opcion != 6);
+}
+
+// Bienvenida al programa
+void Bienvenida(const string &fileName)
+{
+    ifstream inputFile(fileName); // Abrir el archivo
+
+    if (!inputFile)
+    {
+        cerr << "Error: No se pudo abrir el archivo " << fileName << endl;
+        return;
+    }
+
+    string linea;
+    while (getline(inputFile, linea)) // Leer cada línea del archivo
+    {
+        cout << linea << endl; // Imprimir cada línea en el terminal
+    }
+
+    inputFile.close(); // Cerrar el archivo
+}
+
+int main()
+{
+    char continuar;
+    while (continuar != 'X' && continuar != 'x')
+    {
+        string filename = "ucab_z.txt";
+        Bienvenida(filename);
+        cout << "PRESIONA X PARA CONTINUAR --> ";
+        cin >> continuar;
+        system("cls"); // Limpia la consola
+    }
+
+    menuPrincipal(); // Iniciar el menu principal
+    return 0;
+}

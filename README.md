@@ -1,5 +1,5 @@
 # Proyecto_Zombies
-Catedra: Estructuras de datos
+Catedra: Estructuras de datos  
 Profesor: Yisheng
 
 ## Integrantes
