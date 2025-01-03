@@ -213,6 +213,68 @@ public:
     }
 }; 
 
+// Funciones para cargar información desde archivos
+void cargarAccesorios() {
+    ifstream file("Accesorio.zmb");
+    if (!file.is_open()) {
+        cout << "No se pudo abrir el archivo Accesorio.zmb\n";
+        return;
+    }
+    string nombre, tipo;
+    int valor, municiones, duracion;
+    bool mun_especial;
+    while (file >> nombre >> tipo >> valor >> municiones >> duracion >> mun_especial) {
+        accesorios.push_back(make_unique<Accesorios>(nombre, tipo, valor, municiones, duracion, mun_especial));
+    }
+    file.close();
+    cout << "Accesorios cargados correctamente.\n";
+}
+
+void cargarZombies() {
+    ifstream file("Zombie.zmb");
+    if (!file.is_open()) {
+        cout << "No se pudo abrir el archivo Zombie.zmb\n";
+        return;
+    }
+    string nombre;
+    int ataque, velocidad, durabilidad;
+    bool poder_especial;
+    while (file >> nombre >> ataque >> velocidad >> durabilidad >> poder_especial) {
+        zombies.push_back(make_unique<Zombies>(nombre, ataque, velocidad, durabilidad, poder_especial));
+    }
+    file.close();
+    cout << "Zombies cargados correctamente.\n";
+}
+
+void cargarSoldados() {
+    ifstream file("Soldado.zmb");
+    if (!file.is_open()) {
+        cout << "No se pudo abrir el archivo Soldado.zmb\n";
+        return;
+    }
+    string nombre;
+    while (file >> nombre) {
+        soldados.push_back(make_shared<Soldado>(nombre));
+    }
+    file.close();
+    cout << "Soldados cargados correctamente.\n";
+}
+
+void cargarMapa(MapaMetro &mapa) {
+    ifstream file("Mapa.zmb");
+    if (!file.is_open()) {
+        cout << "No se pudo abrir el archivo Mapa.zmb\n";
+        return;
+    }
+    string nombre;
+    bool hayZombies, hayAccesorios;
+    while (file >> nombre >> hayZombies >> hayAccesorios) {
+        mapa.agregarSeccion(nombre, hayZombies, hayAccesorios);
+    }
+    file.close();
+    cout << "Mapa cargado correctamente.\n";
+}
+
 // Menú para gestionar el mapa
 void menuMapa(MapaMetro &mapa) {
     int opcion;
@@ -220,13 +282,14 @@ void menuMapa(MapaMetro &mapa) {
     bool hayZombies;
     bool hayAccesorios; 
 
-    while (opcion != 5) {
+    while (opcion != 6) {
         cout << "\n--- Menú de Manejo de Mapa ---\n";
         cout << "1. Agregar Sección\n";
         cout << "2. Eliminar Sección\n";
         cout << "3. Editar Sección\n";
         cout << "4. Mostrar Mapa\n";
-        cout << "5. Volver al Menú Principal\n";
+        cout << "5. Cargar Mapa desde archivo\n";
+        cout << "6. Volver al Menú Principal\n";
         cout << "Seleccione una opción: ";
         cin >> opcion;
         system("cls"); 
@@ -267,6 +330,9 @@ void menuMapa(MapaMetro &mapa) {
             mapa.mostrarMapa();
             break;
         case 5:
+            cargarMapa(mapa);
+            break;
+        case 6:
             cout << "Volviendo al menú principal...\n";
             break;
         default:
@@ -288,16 +354,16 @@ vector<unique_ptr<Equipo>> equipos;
 void crearEquipo() {
     string nombre;
     while (true) {
-        cout << "Ingrese el nombre del equipo (mínimo 10 caracteres): ";
+        cout << "Ingrese el nombre del equipo (máximo 10 caracteres): ";
         cin.ignore();
         getline(cin, nombre); 
 
-        if (nombre.length() <= 10) {
+        if (nombre.length() <= 10) { // Verificar que el nombre no exceda los 10 caracteres
             equipos.push_back(make_unique<Equipo>(nombre));
             cout << "Equipo " << nombre << " creado.\n";
             break;
         } else {
-            cout << "Error: El nombre del equipo debe tener al menos 10 caracteres. Inténtelo de nuevo.\n";
+            cout << "Error: El nombre del equipo debe tener como máximo 10 caracteres. Inténtelo de nuevo.\n";
         }
     }
 } 
@@ -469,10 +535,10 @@ void agregarZombie() {
     default:
         cout << "Opción inválida. No se agregó ningún zombie.\n";
         return;
-    } 
+    }
 
     zombies.push_back(move(nuevoZombie)); // Agregar el zombie a la lista
-} 
+}
 
 // Función para modificar un zombie
 void modificarZombie() {
@@ -988,7 +1054,7 @@ void eliminarAccesorio() {
     }
     int opcion;
     cin >> opcion;
-    if (opcion < 1 || opcion > accesorios.size()) {
+    if (opcion< 1 || opcion > accesorios.size()) {
         cout << "Opción no válida.\n";
         return;
     }
@@ -1032,7 +1098,8 @@ void menuSoldados() {
         cout << "2. Mostrar Soldados\n";
         cout << "3. Eliminar Soldado\n";
         cout << "4. Modificar Soldado\n";
-        cout << "5. Volver\n";
+        cout << "5. Cargar Soldados desde archivo\n";
+        cout << "6. Volver\n";
         cout << "----> ";
         cin >> opcion;
         system("cls");
@@ -1051,12 +1118,15 @@ void menuSoldados() {
             modificarSoldado();
             break;
         case 5:
+            cargarSoldados();
+            break;
+        case 6:
             return;
         default:
             cout << "Opción inválida.\n";
             break;
         }
-    } while (opcion != 5);
+    } while (opcion != 6);
 }
 
 void menuZombies() {
@@ -1067,7 +1137,8 @@ void menuZombies() {
         cout << "2. Mostrar Zombies\n";
         cout << "3. Eliminar Zombie\n";
         cout << "4. Modificar Zombie\n";
-        cout << "5. Volver\n";
+        cout << "5. Cargar Zombies desde archivo\n";
+        cout << "6. Volver\n";
         cout << "----> ";
         cin >> opcion;
         system("cls");
@@ -1086,12 +1157,15 @@ void menuZombies() {
             modificarZombie();
             break;
         case 5:
+            cargarZombies();
+            break;
+        case 6:
             return;
         default:
             cout << "Opción inválida.\n";
             break;
         }
-    } while (opcion != 5);
+    } while (opcion != 6);
 }
 
 void menuAccesorios() {
@@ -1103,7 +1177,8 @@ void menuAccesorios() {
         cout << "3. Eliminar Accesorio\n";
         cout << "4. Modificar Accesorio\n";
         cout << "5. Asignar Accesorio a Soldado\n";
-        cout << "6. Volver\n";
+        cout << "6. Cargar Accesorios desde archivo\n";
+        cout << "7. Volver\n";
         cout << "----> ";
         cin >> opcion;
         system("cls");
@@ -1125,12 +1200,15 @@ void menuAccesorios() {
             asignarAccesorioSoldado();
             break;
         case 6:
+            cargarAccesorios();
+            break;
+        case 7:
             return;
         default:
             cout << "Opción inválida.\n";
             break;
         }
-    } while (opcion != 6);
+    } while (opcion != 7);
 }
 
 void menuPrincipal() {
