@@ -528,6 +528,9 @@ unique_ptr<Accesorios> agregarAccesorio() {
         tipo = "Arma de proyectiles";
         mun_especial = true;
         break;
+    default:
+        cout << "Opción inválida.\n";
+        return nullptr;
     }
 }
 break;
@@ -566,6 +569,9 @@ case 2:
             duracion = 70;
             tipo = "Arma blanca";
             break;
+        default:
+            cout << "Opción inválida.\n";
+            return nullptr;
         }
     } else if (subcategoria == 2) { // Armas contundentes
         cout << "1. Bate de béisbol\n2. Martillo\n3. Tubería\n";
@@ -598,6 +604,9 @@ case 2:
             tipo = "Arma contundente";
             mun_especial = false;
             break;
+        default:
+            cout << "Opción inválida.\n";
+            return nullptr;
         }
     }
     break;
