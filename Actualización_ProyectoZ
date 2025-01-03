@@ -365,7 +365,8 @@ void menuEquipos() {
         cout << "1. Crear Equipo\n";
         cout << "2. Asignar Soldado a Equipo\n";
         cout << "3. Mostrar Equipos\n";
-        cout << "4. Volver\n";
+        cout << "4. Modificar Equipo\n";
+        cout << "5. Volver\n";
         cout << "----> ";
         cin >> opcion;
         system("cls"); 
@@ -381,13 +382,45 @@ void menuEquipos() {
             mostrarEquipos();
             break;
         case 4:
+            modificarEquipo();
+            break;
+        case 5:
             return;
         default:
             cout << "Opción inválida.\n";
             break;
         }
-    } while (opcion != 4);
+    } while (opcion != 5);
 } 
+
+// Función para modificar un equipo
+void modificarEquipo() {
+    if (equipos.empty()) {
+        cout << "No hay equipos creados.\n";
+        return;
+    }
+
+    cout << "Seleccione un equipo para modificar:\n";
+    for (int i = 0; i < equipos.size(); ++i) {
+        cout << i + 1 << ") " << equipos[i]->nombre_equipo << "\n";
+    }
+
+    int opcionEquipo;
+    cin >> opcionEquipo;
+
+    if (opcionEquipo < 1 || opcionEquipo > equipos.size()) {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    Equipo &equipo = *equipos[opcionEquipo - 1];
+
+    cout << "Ingrese el nuevo nombre del equipo: ";
+    cin.ignore();
+    getline(cin, equipo.nombre_equipo);
+
+    cout << "Equipo modificado correctamente.\n";
+}
 
 // Función para agregar soldado
 void agregarSoldado() {
@@ -396,7 +429,7 @@ void agregarSoldado() {
     cin >> nombre;
     soldados.push_back(make_shared<Soldado>(nombre));
     cout << "Soldado " << nombre << " agregado.\n";
-} 
+}
 
 // Función para agregar un zombie
 void agregarZombie() {
@@ -440,6 +473,43 @@ void agregarZombie() {
 
     zombies.push_back(move(nuevoZombie)); // Agregar el zombie a la lista
 } 
+
+// Función para modificar un zombie
+void modificarZombie() {
+    if (zombies.empty()) {
+        cout << "No hay zombies disponibles para modificar.\n";
+        return;
+    }
+
+    cout << "Seleccione un zombie para modificar:\n";
+    for (int i = 0; i < zombies.size(); ++i) {
+        cout << i + 1 << ") " << zombies[i]->nombre_zombie << "\n";
+    }
+
+    int opcionZombie;
+    cin >> opcionZombie;
+
+    if (opcionZombie < 1 || opcionZombie > zombies.size()) {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    Zombies &zombie = *zombies[opcionZombie - 1];
+
+    cout << "Ingrese el nuevo nombre del zombie: ";
+    cin.ignore();
+    getline(cin, zombie.nombre_zombie);
+    cout << "Ingrese el nuevo ataque del zombie: ";
+    cin >> zombie.ataque;
+    cout << "Ingrese la nueva velocidad del zombie: ";
+    cin >> zombie.velocidad;
+    cout << "Ingrese la nueva durabilidad del zombie: ";
+    cin >> zombie.durabilidad;
+    cout << "¿El zombie tiene poder especial? (1 = Sí, 0 = No): ";
+    cin >> zombie.poder_especial;
+
+    cout << "Zombie modificado correctamente.\n";
+}
 
 // Función para agregar un accesorio (arma) al soldado
 unique_ptr<Accesorios> agregarAccesorio() {
@@ -505,155 +575,186 @@ unique_ptr<Accesorios> agregarAccesorio() {
                 mun_especial = false;
                 break;
             }
-        }else if (subcategoria == 3) { // Armas de proyectiles
-    cout << "1. Ballestas\n2. Tirachinas\n";
-    cout << "----> ";
-    cin >> opcion;
-    system("cls");
+        } else if (subcategoria == 2) { // Armas arrojadizas
+            cout << "1. Granadas\n2. Cocteles Molotov\n";
+            cout << "----> ";
+            cin >> opcion;
+            system("cls"); 
 
-    switch (opcion) {
-    case 1:
-        nombre_accesorio = "Ballesta";
-        valor = 60;
-        municiones = 10;
-        duracion = 70;
-        tipo = "Arma de proyectiles";
-        mun_especial = true;
+            switch (opcion) {
+            case 1:
+                nombre_accesorio = "Granada";
+                valor = 40;
+                municiones = 3;
+                duracion = 1;
+                tipo = "Arma arrojadiza";
+                mun_especial = false;
+                break;
+            case 2:
+                nombre_accesorio = "Coctel Molotov";
+                valor = 45;
+                municiones = 2;
+                duracion = 1;
+                tipo = "Arma arrojadiza";
+                mun_especial = false;
+                break;
+            }
+        } else if (subcategoria == 3) { // Armas de proyectiles
+            cout << "1. Ballestas\n2. Tirachinas\n";
+            cout << "----> ";
+            cin >> opcion;
+            system("cls"); 
+
+            switch (opcion) {
+            case 1:
+                nombre_accesorio = "Ballesta";
+                valor = 60;
+                municiones = 10;
+                duracion = 70;
+                tipo = "Arma de proyectiles";
+                mun_especial = true;
+                break;
+            case 2:
+                nombre_accesorio = "Tirachinas";
+                valor = 20;
+                municiones = 20;
+                duracion = 100;
+                tipo = "Arma de proyectiles";
+                mun_especial = true;
+                break;
+            default:
+                cout << "Opción inválida.\n";
+                return nullptr;
+            }
+        }
         break;
+
     case 2:
-        nombre_accesorio = "Tirachinas";
-        valor = 20;
-        municiones = 20;
-        duracion = 100;
-        tipo = "Arma de proyectiles";
-        mun_especial = true;
+        cout << "Seleccione el tipo de arma cuerpo a cuerpo:\n";
+        cout << "1. Armas blancas\n2. Armas contundentes\n";
+        cout << "----> ";
+        cin >> subcategoria;
+
+        if (subcategoria == 1) { // Armas blancas
+            cout << "1. Cuchillo\n2. Machete\n3. Espada\n";
+            cout << "----> ";
+            cin >> opcion;
+            system("cls");
+
+            switch (opcion) {
+            case 1:
+                nombre_accesorio = "Cuchillo";
+                valor = 25;
+                municiones = 0;
+                duracion = 100;
+                tipo = "Arma blanca";
+                break;
+            case 2:
+                nombre_accesorio = "Machete";
+                valor = 40;
+                municiones = 0;
+                duracion = 80;
+                tipo = "Arma blanca";
+                break;
+            case 3:
+                nombre_accesorio = "Espada";
+                valor = 60;
+                municiones = 0;
+                duracion = 70;
+                tipo = "Arma blanca";
+                break;
+            default:
+                cout << "Opción inválida.\n";
+                return nullptr;
+            }
+        } else if (subcategoria == 2) { // Armas contundentes
+            cout << "1. Bate de béisbol\n2. Martillo\n3. Tubería\n";
+            cout << "----> ";
+            cin >> opcion;
+            system("cls");
+
+            switch (opcion) {
+            case 1:
+                nombre_accesorio = "Bate de béisbol";
+                valor = 35;
+                municiones = 0;
+                duracion = 90;
+                tipo = "Arma contundente";
+                mun_especial = false;
+                break;
+            case 2:
+                nombre_accesorio = "Martillo";
+                valor = 50;
+                municiones = 0;
+                duracion = 75;
+                tipo = "Arma contundente";
+                mun_especial = false;
+                break;
+            case 3:
+                nombre_accesorio = "Tubería";
+                valor = 45;
+                municiones = 0;
+                duracion = 60;
+                tipo = "Arma contundente";
+                mun_especial = false;
+                break;
+            default:
+                cout << "Opción inválida.\n";
+                return nullptr;
+            }
+        }
         break;
-    default:
-        cout << "Opción inválida.\n";
-        return nullptr;
-    }
-}
-break;
 
-case 2:
-    cout << "Seleccione el tipo de arma cuerpo a cuerpo:\n";
-    cout << "1. Armas blancas\n2. Armas contundentes\n";
-    cout << "----> ";
-    cin >> subcategoria;
-
-    if (subcategoria == 1) { // Armas blancas
-        cout << "1. Cuchillo\n2. Machete\n3. Espada\n";
+    case 3:
+        cout << "Seleccione el tipo de arma improvisada:\n";
+        cout << "1. Objetos punzantes\n2. Objetos contundentes\n3. Armas incendiarias\n4. Trampas\n";
         cout << "----> ";
         cin >> opcion;
-        system("cls");
 
         switch (opcion) {
         case 1:
-            nombre_accesorio = "Cuchillo";
-            valor = 25;
+            nombre_accesorio = "Objetos punzantes (clavos, tijeras, destornilladores)";
+            valor = 20;
             municiones = 0;
-            duracion = 100;
-            tipo = "Arma blanca";
+            duracion = 50;
+            tipo = "Arma improvisada";
+            mun_especial = false;
             break;
         case 2:
-            nombre_accesorio = "Machete";
-            valor = 40;
+            nombre_accesorio = "Objetos contundentes (ladrillos, rocas, palos)";
+            valor = 15;
             municiones = 0;
-            duracion = 80;
-            tipo = "Arma blanca";
+            duracion = 40;
+            tipo = "Arma improvisada";
+            mun_especial = false;
             break;
         case 3:
-            nombre_accesorio = "Espada";
-            valor = 60;
-            municiones = 0;
-            duracion = 70;
-            tipo = "Arma blanca";
-            break;
-        default:
-            cout << "Opción inválida.\n";
-            return nullptr;
-        }
-    } else if (subcategoria == 2) { // Armas contundentes
-        cout << "1. Bate de béisbol\n2. Martillo\n3. Tubería\n";
-        cout << "----> ";
-        cin >> opcion;
-        system("cls");
-
-        switch (opcion) {
-        case 1:
-            nombre_accesorio = "Bate de béisbol";
+            nombre_accesorio = "Armas incendiarias (fósforos, líquido inflamable)";
             valor = 35;
             municiones = 0;
-            duracion = 90;
-            tipo = "Arma contundente";
+            duracion = 30;
+            tipo = "Arma improvisada";
             mun_especial = false;
             break;
-        case 2:
-            nombre_accesorio = "Martillo";
+        case 4:
+            nombre_accesorio = "Trampas";
             valor = 50;
             municiones = 0;
-            duracion = 75;
-            tipo = "Arma contundente";
-            mun_especial = false;
-            break;
-        case 3:
-            nombre_accesorio = "Tubería";
-            valor = 45;
-            municiones = 0;
             duracion = 60;
-            tipo = "Arma contundente";
+            tipo = "Arma improvisada";
             mun_especial = false;
             break;
         default:
             cout << "Opción inválida.\n";
             return nullptr;
         }
-    }
-    break;
+        break;
 
-case 3:
-    cout << "Seleccione el tipo de arma improvisada:\n";
-    cout << "1. Objetos punzantes\n2. Objetos contundentes\n3. Armas incendiarias\n4. Trampas\n";
-    cout << "----> ";
-    cin >> opcion;
-
-    switch (opcion) {
-    case 1:
-        nombre_accesorio = "Objetos punzantes (clavos, tijeras, destornilladores)";
-        valor = 20;
-        municiones = 0;
-        duracion = 50;
-        tipo = "Arma improvisada";
-        mun_especial = false;
-        break;
-    case 2:
-        nombre_accesorio = "Objetos contundentes (ladrillos, rocas, palos)";
-        valor = 15;
-        municiones = 0;
-        duracion = 40;
-        tipo = "Arma improvisada";
-        mun_especial = false;
-        break;
-    case 3:
-        nombre_accesorio = "Armas incendiarias (fósforos, líquido inflamable)";
-        valor = 35;
-        municiones = 0;
-        duracion = 30;
-        tipo = "Arma improvisada";
-        mun_especial = false;
-        break;
-    case 4:
-        nombre_accesorio = "Trampas";
-        valor = 50;
-        municiones = 0;
-        duracion = 60;
-        tipo = "Arma improvisada";
-        mun_especial = false;
-        break;
     default:
         cout << "Opción inválida.\n";
         return nullptr;
     }
+
     return make_unique<Accesorios>(nombre_accesorio, tipo, valor, municiones, duracion, mun_especial);
 }
 
@@ -668,12 +769,80 @@ void crearAccesorio() {
     }
 }
 
+// Función para modificar un accesorio
+void modificarAccesorio() {
+    if (accesorios.empty()) {
+        cout << "No hay accesorios disponibles para modificar.\n";
+        return;
+    }
+
+    cout << "Seleccione un accesorio para modificar:\n";
+    for (int i = 0; i < accesorios.size(); ++i) {
+        cout << i + 1 << ") " << accesorios[i]->nombre_accesorio << "\n";
+    }
+
+    int opcionAccesorio;
+    cin >> opcionAccesorio;
+
+    if (opcionAccesorio < 1 || opcionAccesorio > accesorios.size()) {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    Accesorios &accesorio = *accesorios[opcionAccesorio - 1];
+
+    cout << "Ingrese el nuevo nombre del accesorio: ";
+    cin.ignore();
+    getline(cin, accesorio.nombre_accesorio);
+    cout << "Ingrese el nuevo tipo del accesorio: ";
+    getline(cin, accesorio.tipo);
+    cout << "Ingrese el nuevo valor del accesorio: ";
+    cin >> accesorio.valor;
+    cout << "Ingrese las nuevas municiones del accesorio: ";
+    cin >> accesorio.municiones;
+    cout << "Ingrese la nueva duración del accesorio: ";
+    cin >> accesorio.duracion;
+    cout << "¿El accesorio tiene munición especial? (1 = Sí, 0 = No): ";
+    cin >> accesorio.mun_especial;
+
+    cout << "Accesorio modificado correctamente.\n";
+}
+
 // Función para mostrar soldados
 void mostrarSoldados() {
     cout << "Soldados disponibles:\n";
     for (const auto &soldado : soldados) {
         soldado->mostrarSoldado();
     }
+}
+
+// Función para modificar un soldado
+void modificarSoldado() {
+    if (soldados.empty()) {
+        cout << "No hay soldados disponibles para modificar.\n";
+        return;
+    }
+
+    cout << "Seleccione un soldado para modificar:\n";
+    for (int i = 0; i < soldados.size(); ++i) {
+        cout << i + 1 << ") " << soldados[i]->nombre_soldado << "\n";
+    }
+
+    int opcionSoldado;
+    cin >> opcionSoldado;
+
+    if (opcionSoldado < 1 || opcionSoldado > soldados.size()) {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    Soldado &soldado = *soldados[opcionSoldado - 1];
+
+    cout << "Ingrese el nuevo nombre del soldado: ";
+    cin.ignore();
+    getline(cin, soldado.nombre_soldado);
+
+    cout << "Soldado modificado correctamente.\n";
 }
 
 // Función para mostrar zombies
@@ -862,7 +1031,8 @@ void menuSoldados() {
         cout << "1. Agregar Soldado\n";
         cout << "2. Mostrar Soldados\n";
         cout << "3. Eliminar Soldado\n";
-        cout << "4. Volver\n";
+        cout << "4. Modificar Soldado\n";
+        cout << "5. Volver\n";
         cout << "----> ";
         cin >> opcion;
         system("cls");
@@ -878,12 +1048,15 @@ void menuSoldados() {
             eliminarSoldado();
             break;
         case 4:
+            modificarSoldado();
+            break;
+        case 5:
             return;
         default:
             cout << "Opción inválida.\n";
             break;
         }
-    } while (opcion != 4);
+    } while (opcion != 5);
 }
 
 void menuZombies() {
@@ -893,7 +1066,8 @@ void menuZombies() {
         cout << "1. Agregar Zombie\n";
         cout << "2. Mostrar Zombies\n";
         cout << "3. Eliminar Zombie\n";
-        cout << "4. Volver\n";
+        cout << "4. Modificar Zombie\n";
+        cout << "5. Volver\n";
         cout << "----> ";
         cin >> opcion;
         system("cls");
@@ -909,12 +1083,15 @@ void menuZombies() {
             eliminarZombie();
             break;
         case 4:
+            modificarZombie();
+            break;
+        case 5:
             return;
         default:
             cout << "Opción inválida.\n";
             break;
         }
-    } while (opcion != 4);
+    } while (opcion != 5);
 }
 
 void menuAccesorios() {
@@ -924,8 +1101,9 @@ void menuAccesorios() {
         cout << "1. Agregar Accesorio\n";
         cout << "2. Mostrar Accesorios\n";
         cout << "3. Eliminar Accesorio\n";
-        cout << "4. Asignar Accesorio a Soldado\n";
-        cout << "5. Volver\n";
+        cout << "4. Modificar Accesorio\n";
+        cout << "5. Asignar Accesorio a Soldado\n";
+        cout << "6. Volver\n";
         cout << "----> ";
         cin >> opcion;
         system("cls");
@@ -941,15 +1119,18 @@ void menuAccesorios() {
             eliminarAccesorio();
             break;
         case 4:
-            asignarAccesorioSoldado();
+            modificarAccesorio();
             break;
         case 5:
+            asignarAccesorioSoldado();
+            break;
+        case 6:
             return;
         default:
             cout << "Opción inválida.\n";
             break;
         }
-    } while (opcion != 5);
+    } while (opcion != 6);
 }
 
 void menuPrincipal() {
@@ -1021,9 +1202,5 @@ int main() {
         system("cls"); // Limpia la consola
     }
     menuPrincipal(); // Iniciar el menú principal
-    return 0;
-} 
-
-    menuPrincipal(); // Iniciar el menu principal
     return 0;
 }
