@@ -310,25 +310,114 @@ void modificarEquipo() {
     cout << "Equipo modificado correctamente.\n";
 }
 
-// Funciones para encontrar caminos
+//Funciones para encontrar caminos
 vector<string> encontrarCaminoMasCorto(MapaMetro &mapa, const string &inicio, const string &fin) {
-    // Implementación del algoritmo de búsqueda del camino más corto (por ejemplo, Dijkstra)
-    // Aquí se debe completar la lógica para encontrar el camino más corto.
-    vector<string> camino = {"SeccionA", "SeccionB", "SeccionC"}; // Esto es solo un ejemplo
+    unordered_map<SeccionMetro*, int> distancias;
+    unordered_map<SeccionMetro*, SeccionMetro*> predecesores;
+    set<pair<int, SeccionMetro*>> cola;
+
+    for (auto &pair : mapa.secciones) {
+        distancias[pair.second] = numeric_limits<int>::max();
+    }
+    distancias[mapa.secciones[inicio]] = 0;
+    cola.insert({0, mapa.secciones[inicio]});
+
+    while (!cola.empty()) {
+        SeccionMetro *actual = cola.begin()->second;
+        cola.erase(cola.begin());
+
+        if (actual->nombre == fin) break;
+
+        for (auto &vecino : actual->vecinos) {
+            int nuevaDistancia = distancias[actual] + vecino.second;
+            if (nuevaDistancia < distancias[vecino.first]) {
+                cola.erase({distancias[vecino.first], vecino.first});
+                distancias[vecino.first] = nuevaDistancia;
+                predecesores[vecino.first] = actual;
+                cola.insert({nuevaDistancia, vecino.first});
+            }
+        }
+    }
+
+    vector<string> camino;
+    for (SeccionMetro *at = mapa.secciones[fin]; at != nullptr; at = predecesores[at]) {
+        camino.push_back(at->nombre);
+    }
+    reverse(camino.begin(), camino.end());
     return camino;
 }
 
 vector<string> encontrarCaminoConMenosZombies(MapaMetro &mapa, const string &inicio, const string &fin) {
-    // Implementación del algoritmo para encontrar el camino con menos zombies
-    // Aquí se debe completar la lógica para encontrar el camino con menos zombies.
-    vector<string> camino = {"SeccionA", "SeccionD", "SeccionC"}; // Esto es solo un ejemplo
+    unordered_map<SeccionMetro*, int> distancias;
+    unordered_map<SeccionMetro*, SeccionMetro*> predecesores;
+    set<pair<int, SeccionMetro*>> cola;
+
+    for (auto &pair : mapa.secciones) {
+        distancias[pair.second] = numeric_limits<int>::max();
+    }
+    distancias[mapa.secciones[inicio]] = 0;
+    cola.insert({0, mapa.secciones[inicio]});
+
+    while (!cola.empty()) {
+        SeccionMetro *actual = cola.begin()->second;
+        cola.erase(cola.begin());
+
+        if (actual->nombre == fin) break;
+
+        for (auto &vecino : actual->vecinos) {
+            int penalizacionZombie = vecino.first->hayZombies ? 10 : 0;
+            int nuevaDistancia = distancias[actual] + vecino.second + penalizacionZombie;
+            if (nuevaDistancia < distancias[vecino.first]) {
+                cola.erase({distancias[vecino.first], vecino.first});
+                distancias[vecino.first] = nuevaDistancia;
+                predecesores[vecino.first] = actual;
+                cola.insert({nuevaDistancia, vecino.first});
+            }
+        }
+    }
+
+    vector<string> camino;
+    for (SeccionMetro *at = mapa.secciones[fin]; at != nullptr; at = predecesores[at]) {
+        camino.push_back(at->nombre);
+    }
+    reverse(camino.begin(), camino.end());
     return camino;
 }
 
 vector<string> encontrarCaminoPosibleSobreviviente(MapaMetro &mapa, const string &inicio, const string &fin) {
-    // Implementación del algoritmo para encontrar el camino con posibilidad de sobreviviente
-    // Aquí se debe completar la lógica para encontrar el camino con posibilidad de sobreviviente.
-    vector<string> camino = {"SeccionA", "SeccionE", "SeccionC"}; // Esto es solo un ejemplo
+    unordered_map<SeccionMetro*, int> distancias;
+    unordered_map<SeccionMetro*, SeccionMetro*> predecesores;
+    set<pair<int, SeccionMetro*>> cola;
+
+    for (auto &pair : mapa.secciones) {
+        distancias[pair.second] = numeric_limits<int>::max();
+    }
+    distancias[mapa.secciones[inicio]] = 0;
+    cola.insert({0, mapa.secciones[inicio]});
+
+    while (!cola.empty()) {
+        SeccionMetro *actual = cola.begin()->second;
+        cola.erase(cola.begin());
+
+        if (actual->nombre == fin) break;
+
+        for (auto &vecino : actual->vecinos) {
+            int probabilidadSobreviviente = vecino.first->hayAccesorios ? -10 : 0;
+            int nuevaDistancia = distancias[actual] + vecino.second + probabilidadSobreviviente;
+            if (nuevaDistancia < distancias[vecino.first]) {
+                cola.erase({distancias[vecino.first], vecino.first});
+                distancias[vecino.first] = nuevaDistancia;
+                predecesores[vecino.first] = actual;
+                cola.insert({nuevaDistancia, vecino.first});
+            }
+        }
+    }
+
+    vector<string> camino;
+    for (SeccionMetro *at = mapa.secciones[fin]; at != nullptr; at = predecesores[at]) {
+        camino.push_back(at->nombre);
+    }
+    reverse(camino.begin(), camino.end());
     return camino;
 }
 
