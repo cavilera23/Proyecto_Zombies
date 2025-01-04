@@ -7,15 +7,21 @@
 #include <map>
 #include <queue>
 #include <cstdlib>
-#include <ctime> 
+#include <ctime>
 
 /* HECHO POR:
     CHRISTIAN VILERA
     ISAAC RODRIGUEZ
     ARNALDO VELASQUEZ
-*/ 
+*/
 
-using namespace std; 
+using namespace std;
+
+// Vectores para almacenar soldados, zombies, y accesorios
+vector<shared_ptr<Soldado>> soldados;
+vector<unique_ptr<Zombies>> zombies;
+vector<unique_ptr<Accesorios>> accesorios;
+vector<unique_ptr<Equipo>> equipos;
 
 /* COMPONENTES */
 // 1) Estructura para accesorios
@@ -25,12 +31,12 @@ struct Accesorios {
     int valor;
     int municiones;
     int duracion;
-    bool mun_especial; 
+    bool mun_especial;
 
     Accesorios(string nombre, string tipo, int val, int mun, int dur, bool m_esp) // Constructor
         : nombre_accesorio(nombre), tipo(tipo), valor(val), municiones(mun), duracion(dur), mun_especial(m_esp) {
     }
-}; 
+};
 
 // 2) Estructura para zombies
 struct Zombies {
@@ -38,19 +44,19 @@ struct Zombies {
     int ataque;
     int velocidad;
     int durabilidad;
-    bool poder_especial; 
+    bool poder_especial;
 
     Zombies(string nombre, int atk, int vcd, int dur, bool pwr) // Constructor
         : nombre_zombie(nombre), ataque(atk), velocidad(vcd), durabilidad(dur), poder_especial(pwr) {
     }
-}; 
+};
 
 // 3) Estructura para la mochila
 struct Mochila {
     string propietario;
-    vector<unique_ptr<Accesorios>> accesorios; // Hasta 3 accesorios 
+    vector<unique_ptr<Accesorios>> accesorios; // Hasta 3 accesorios
 
-    Mochila(string d) : propietario(d) {} 
+    Mochila(string d) : propietario(d) {}
 
     // Método para agregar accesorios a la mochila
     bool agregarAccesorio(unique_ptr<Accesorios> accesorio) {
@@ -61,7 +67,7 @@ struct Mochila {
             cout << "Mochila llena, no se puede agregar más accesorios.\n";
             return false;
         }
-    } 
+    }
 
     // Método para mostrar los accesorios en la mochila
     void mostrarAccesorios() const {
@@ -74,37 +80,37 @@ struct Mochila {
                  << ", Munición Especial: " << (accesorio->mun_especial ? "Sí" : "No") << ")\n";
         }
     }
-}; 
+};
 
 // 4) Estructura para soldados
 struct Soldado {
     string nombre_soldado;
     const int salud = 100; // Salud constante
-    Mochila mochila; 
+    Mochila mochila;
 
     Soldado(string nombre)
-        : nombre_soldado(nombre), mochila(nombre) {} // Constructor inicializa mochila 
+        : nombre_soldado(nombre), mochila(nombre) {} // Constructor inicializa mochila
 
     // Método para asignar un accesorio a la mochila
     void agregarAccesorioMochila(unique_ptr<Accesorios> accesorio) {
         if (!mochila.agregarAccesorio(move(accesorio))) {
             cout << "No se pudo agregar el accesorio a la mochila.\n";
         }
-    } 
+    }
 
     // Método para mostrar el soldado y su mochila
     void mostrarSoldado() const {
         cout << "Soldado: " << nombre_soldado << "\nSalud: " << salud << "\n" << endl;
         mochila.mostrarAccesorios();
     }
-}; 
+};
 
 // 5) Estructura para los equipos
 struct Equipo {
     string nombre_equipo;
-    vector<shared_ptr<Soldado>> soldados; // Lista de soldados en el equipo 
+    vector<shared_ptr<Soldado>> soldados; // Lista de soldados en el equipo
 
-    Equipo(string nombre) : nombre_equipo(nombre) {} 
+    Equipo(string nombre) : nombre_equipo(nombre) {}
 
     // Método para mostrar los soldados en el equipo
     void mostrarSoldados() const {
@@ -117,25 +123,25 @@ struct Equipo {
             cout << "- " << soldado->nombre_soldado << "\n";
         }
     }
-}; 
+};
 
 // 6) Estructura para las secciones del metro en el mapa del juego
 struct SeccionMetro {
     string nombre;
     bool hayZombies;
     bool hayAccesorios;
-    SeccionMetro *siguiente; 
+    SeccionMetro *siguiente;
 
     SeccionMetro(const string &nombre, bool zombies, bool accesorios)
         : nombre(nombre), hayZombies(zombies), hayAccesorios(accesorios), siguiente(nullptr) {}
-}; 
+};
 
 class MapaMetro {
 private:
-    SeccionMetro *inicio; 
+    SeccionMetro *inicio;
 
 public:
-    MapaMetro() : inicio(nullptr) {} 
+    MapaMetro() : inicio(nullptr) {}
 
     void agregarSeccion(const string &nombre, bool hayZombies, bool hayAccesorios) {
         SeccionMetro *nuevaSeccion = new SeccionMetro(nombre, hayZombies, hayAccesorios);
@@ -148,33 +154,33 @@ public:
             }
             temp->siguiente = nuevaSeccion;
         }
-    } 
+    }
 
     bool eliminarSeccion(const string &nombre) {
         if (!inicio)
-            return false; 
+            return false;
 
         if (inicio->nombre == nombre) {
             SeccionMetro *temp = inicio;
             inicio = inicio->siguiente;
             delete temp;
             return true;
-        } 
+        }
 
         SeccionMetro *actual = inicio;
         while (actual->siguiente && actual->siguiente->nombre != nombre) {
             actual = actual->siguiente;
-        } 
+        }
 
         if (actual->siguiente) {
             SeccionMetro *temp = actual->siguiente;
             actual->siguiente = temp->siguiente;
             delete temp;
             return true;
-        } 
+        }
 
         return false; // No se encontró la sección
-    } 
+    }
 
     bool editarSeccion(const string &nombre) {
         SeccionMetro *actual = inicio;
@@ -192,7 +198,7 @@ public:
             actual = actual->siguiente;
         }
         return false;
-    } 
+    }
 
     void mostrarMapa() {
         SeccionMetro *temp = inicio;
@@ -202,7 +208,7 @@ public:
                  << (temp->hayAccesorios ? " - Hay accesorios aquí" : "") << endl;
             temp = temp->siguiente;
         }
-    } 
+    }
 
     ~MapaMetro() {
         while (inicio) {
@@ -211,7 +217,7 @@ public:
             delete temp;
         }
     }
-}; 
+};
 
 // Funciones para cargar información desde archivos
 void cargarAccesorios() {
@@ -275,12 +281,123 @@ void cargarMapa(MapaMetro &mapa) {
     cout << "Mapa cargado correctamente.\n";
 }
 
+// Función para modificar un equipo
+void modificarEquipo() {
+    if (equipos.empty()) {
+        cout << "No hay equipos creados.\n";
+        return;
+    }
+
+    cout << "Seleccione un equipo para modificar:\n";
+    for (int i = 0; i < equipos.size(); ++i) {
+        cout << i + 1 << ") " << equipos[i]->nombre_equipo << "\n";
+    }
+
+    int opcionEquipo;
+    cin >> opcionEquipo;
+
+    if (opcionEquipo < 1 || opcionEquipo > equipos.size()) {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    Equipo &equipo = *equipos[opcionEquipo - 1];
+
+    cout << "Ingrese el nuevo nombre del equipo: ";
+    cin.ignore();
+    getline(cin, equipo.nombre_equipo);
+
+    cout << "Equipo modificado correctamente.\n";
+}
+
+// Funciones para encontrar caminos
+vector<string> encontrarCaminoMasCorto(MapaMetro &mapa, const string &inicio, const string &fin) {
+    // Implementación del algoritmo de búsqueda del camino más corto (por ejemplo, Dijkstra)
+    // Aquí se debe completar la lógica para encontrar el camino más corto.
+    vector<string> camino = {"SeccionA", "SeccionB", "SeccionC"}; // Esto es solo un ejemplo
+    return camino;
+}
+
+vector<string> encontrarCaminoConMenosZombies(MapaMetro &mapa, const string &inicio, const string &fin) {
+    // Implementación del algoritmo para encontrar el camino con menos zombies
+    // Aquí se debe completar la lógica para encontrar el camino con menos zombies.
+    vector<string> camino = {"SeccionA", "SeccionD", "SeccionC"}; // Esto es solo un ejemplo
+    return camino;
+}
+
+vector<string> encontrarCaminoPosibleSobreviviente(MapaMetro &mapa, const string &inicio, const string &fin) {
+    // Implementación del algoritmo para encontrar el camino con posibilidad de sobreviviente
+    // Aquí se debe completar la lógica para encontrar el camino con posibilidad de sobreviviente.
+    vector<string> camino = {"SeccionA", "SeccionE", "SeccionC"}; // Esto es solo un ejemplo
+    return camino;
+}
+
+// Menú de misiones
+void menuMisiones(MapaMetro &mapa) {
+    if (equipos.empty()) {
+        cout << "No hay equipos creados.\n";
+        return;
+    }
+
+    cout << "Seleccione un equipo para realizar la misión:\n";
+    for (int i = 0; i < equipos.size(); ++i) {
+        cout << i + 1 << ") " << equipos[i]->nombre_equipo << "\n";
+    }
+
+    int opcionEquipo;
+    cin >> opcionEquipo;
+
+    if (opcionEquipo < 1 || opcionEquipo > equipos.size()) {
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    Equipo &equipo = *equipos[opcionEquipo - 1];
+
+    string inicio, fin;
+    cout << "Ingrese el punto de partida: ";
+    cin.ignore();
+    getline(cin, inicio);
+    cout << "Ingrese el punto de llegada: ";
+    getline(cin, fin);
+
+    int opcion;
+    cout << "\n--- Menú de Misiones ---\n";
+    cout << "1. Camino más corto\n";
+    cout << "2. Camino con menos zombies\n";
+    cout << "3. Camino con posibilidad de sobreviviente\n";
+    cout << "Seleccione una opción: ";
+    cin >> opcion;
+
+    vector<string> camino;
+    switch (opcion) {
+    case 1:
+        camino = encontrarCaminoMasCorto(mapa, inicio, fin);
+        break;
+    case 2:
+        camino = encontrarCaminoConMenosZombies(mapa, inicio, fin);
+        break;
+    case 3:
+        camino = encontrarCaminoPosibleSobreviviente(mapa, inicio, fin);
+        break;
+    default:
+        cout << "Opción no válida.\n";
+        return;
+    }
+
+    cout << "Camino encontrado:\n";
+    for (const auto &seccion : camino) {
+        cout << seccion << " -> ";
+    }
+    cout << "FIN\n";
+}
+
 // Menú para gestionar el mapa
 void menuMapa(MapaMetro &mapa) {
-    int opcion;
+    int opcion = 0; // Inicializar la variable opcion
     string nombre;
     bool hayZombies;
-    bool hayAccesorios; 
+    bool hayAccesorios;
 
     while (opcion != 6) {
         cout << "\n--- Menú de Manejo de Mapa ---\n";
@@ -292,7 +409,7 @@ void menuMapa(MapaMetro &mapa) {
         cout << "6. Volver al Menú Principal\n";
         cout << "Seleccione una opción: ";
         cin >> opcion;
-        system("cls"); 
+        clearConsole();
 
         switch (opcion) {
         case 1:
@@ -340,15 +457,9 @@ void menuMapa(MapaMetro &mapa) {
             break;
         }
     }
-} 
+}
 
-/* FUNCIONES PARA GESTIONAR SOLDADOS, ZOMBIES, Y ACCESORIOS */ 
-
-// Vectores para almacenar soldados, zombies, y accesorios
-vector<shared_ptr<Soldado>> soldados;
-vector<unique_ptr<Zombies>> zombies;
-vector<unique_ptr<Accesorios>> accesorios;
-vector<unique_ptr<Equipo>> equipos; 
+/* FUNCIONES PARA GESTIONAR SOLDADOS, ZOMBIES, Y ACCESORIOS */
 
 // Función crear equipo
 void crearEquipo() {
@@ -356,7 +467,7 @@ void crearEquipo() {
     while (true) {
         cout << "Ingrese el nombre del equipo (máximo 10 caracteres): ";
         cin.ignore();
-        getline(cin, nombre); 
+        getline(cin, nombre);
 
         if (nombre.length() <= 10) { // Verificar que el nombre no exceda los 10 caracteres
             equipos.push_back(make_unique<Equipo>(nombre));
@@ -366,62 +477,62 @@ void crearEquipo() {
             cout << "Error: El nombre del equipo debe tener como máximo 10 caracteres. Inténtelo de nuevo.\n";
         }
     }
-} 
+}
 
 // Función agregar soldado a equipo
 void asignarSoldadoAEquipo() {
     if (soldados.empty()) {
         cout << "No hay soldados disponibles para asignar.\n";
         return;
-    } 
+    }
 
     if (equipos.empty()) {
         cout << "No hay equipos creados. Primero crea un equipo.\n" << endl;
         return;
-    } 
+    }
 
     cout << "Seleccione un soldado para asignar:\n";
     for (int i = 0; i < soldados.size(); ++i) {
         cout << i + 1 << ") " << soldados[i]->nombre_soldado << "\n";
-    } 
+    }
 
     int opcionSoldado;
-    cin >> opcionSoldado; 
+    cin >> opcionSoldado;
 
     if (opcionSoldado < 1 || opcionSoldado > soldados.size()) {
         cout << "Opción no válida.\n";
         return;
-    } 
+    }
 
     cout << "Seleccione un equipo al que desea asignar el soldado:\n";
     for (int i = 0; i < equipos.size(); ++i) {
         cout << i + 1 << ") " << equipos[i]->nombre_equipo << "\n";
-    } 
+    }
 
     int opcionEquipo;
-    cin >> opcionEquipo; 
+    cin >> opcionEquipo;
 
     if (opcionEquipo < 1 || opcionEquipo > equipos.size()) {
         cout << "Opción no válida.\n";
         return;
-    } 
+    }
 
     // Asignar el soldado al equipo seleccionado
-    equipos[opcionEquipo - 1]->soldados.push_back(soldados[opcionSoldado - 1]);
+    equipos[opcionEquipo - 1]->soldados.push_back(soldados[opcionSoldado -1]);
     cout << "Soldado " << soldados[opcionSoldado - 1]->nombre_soldado << " asignado al equipo " << equipos[opcionEquipo - 1]->nombre_equipo << ".\n";
-} 
+}
 
 // Mostrar equipos
 void mostrarEquipos() {
     if (equipos.empty()) {
         cout << "No hay equipos creados.\n";
         return;
-    } 
+    }
 
     for (const auto &equipo : equipos) {
         equipo->mostrarSoldados();
     }
-} 
+}
 
 // Menú equipos
 void menuEquipos() {
@@ -435,7 +546,7 @@ void menuEquipos() {
         cout << "5. Volver\n";
         cout << "----> ";
         cin >> opcion;
-        system("cls"); 
+        clearConsole();
 
         switch (opcion) {
         case 1:
@@ -457,35 +568,6 @@ void menuEquipos() {
             break;
         }
     } while (opcion != 5);
-} 
-
-// Función para modificar un equipo
-void modificarEquipo() {
-    if (equipos.empty()) {
-        cout << "No hay equipos creados.\n";
-        return;
-    }
-
-    cout << "Seleccione un equipo para modificar:\n";
-    for (int i = 0; i < equipos.size(); ++i) {
-        cout << i + 1 << ") " << equipos[i]->nombre_equipo << "\n";
-    }
-
-    int opcionEquipo;
-    cin >> opcionEquipo;
-
-    if (opcionEquipo < 1 || opcionEquipo > equipos.size()) {
-        cout << "Opción no válida.\n";
-        return;
-    }
-
-    Equipo &equipo = *equipos[opcionEquipo - 1];
-
-    cout << "Ingrese el nuevo nombre del equipo: ";
-    cin.ignore();
-    getline(cin, equipo.nombre_equipo);
-
-    cout << "Equipo modificado correctamente.\n";
 }
 
 // Función para agregar soldado
@@ -507,9 +589,9 @@ void agregarZombie() {
     cout << "4. Zombies infectados por hongos\n";
     cout << "5. Zombies bioluminiscentes\n";
     cout << "----> ";
-    cin >> opcion; 
+    cin >> opcion;
 
-    unique_ptr<Zombies> nuevoZombie; 
+    unique_ptr<Zombies> nuevoZombie;
 
     switch (opcion) {
     case 1:
@@ -585,12 +667,12 @@ unique_ptr<Accesorios> agregarAccesorio() {
     cout << "2. Armas cuerpo a cuerpo\n";
     cout << "3. Armas improvisadas\n";
     cout << "----> ";
-    cin >> categoria; 
+    cin >> categoria;
 
     int subcategoria, opcion;
     string nombre_accesorio, tipo;
     int valor, municiones, duracion;
-    bool mun_especial; 
+    bool mun_especial;
 
     switch (categoria) {
     case 1:
@@ -599,13 +681,13 @@ unique_ptr<Accesorios> agregarAccesorio() {
         cout << "2. Armas arrojadizas\n";
         cout << "3. Armas de proyectiles\n";
         cout << "----> ";
-        cin >> subcategoria; 
+        cin >> subcategoria;
 
         if (subcategoria == 1) { // Armas de fuego
             cout << "1. Pistolas\n2. Escopetas\n3. Fusiles de asalto\n4. Rifles de francotirador\n";
             cout << "----> ";
             cin >> opcion;
-            system("cls"); 
+            clearConsole();
 
             switch (opcion) {
             case 1:
@@ -645,7 +727,7 @@ unique_ptr<Accesorios> agregarAccesorio() {
             cout << "1. Granadas\n2. Cocteles Molotov\n";
             cout << "----> ";
             cin >> opcion;
-            system("cls"); 
+            clearConsole();
 
             switch (opcion) {
             case 1:
@@ -669,7 +751,7 @@ unique_ptr<Accesorios> agregarAccesorio() {
             cout << "1. Ballestas\n2. Tirachinas\n";
             cout << "----> ";
             cin >> opcion;
-            system("cls"); 
+            clearConsole();
 
             switch (opcion) {
             case 1:
@@ -705,7 +787,7 @@ unique_ptr<Accesorios> agregarAccesorio() {
             cout << "1. Cuchillo\n2. Machete\n3. Espada\n";
             cout << "----> ";
             cin >> opcion;
-            system("cls");
+            clearConsole();
 
             switch (opcion) {
             case 1:
@@ -737,7 +819,7 @@ unique_ptr<Accesorios> agregarAccesorio() {
             cout << "1. Bate de béisbol\n2. Martillo\n3. Tubería\n";
             cout << "----> ";
             cin >> opcion;
-            system("cls");
+            clearConsole();
 
             switch (opcion) {
             case 1:
@@ -1042,7 +1124,7 @@ void eliminarZombie() {
 
 // Función para eliminar un accesorio
 void eliminarAccesorio() {
-    if (accesorios.size() == 0) {
+    if (accesorios.empty()) {
         cout << "No hay accesorios para eliminar.\n";
         return;
     }
@@ -1054,7 +1136,7 @@ void eliminarAccesorio() {
     }
     int opcion;
     cin >> opcion;
-    if (opcion< 1 || opcion > accesorios.size()) {
+    if (opcion < 1 || opcion > accesorios.size()) {
         cout << "Opción no válida.\n";
         return;
     }
@@ -1102,7 +1184,7 @@ void menuSoldados() {
         cout << "6. Volver\n";
         cout << "----> ";
         cin >> opcion;
-        system("cls");
+        clearConsole();
 
         switch (opcion) {
         case 1:
@@ -1141,7 +1223,7 @@ void menuZombies() {
         cout << "6. Volver\n";
         cout << "----> ";
         cin >> opcion;
-        system("cls");
+        clearConsole();
 
         switch (opcion) {
         case 1:
@@ -1181,7 +1263,7 @@ void menuAccesorios() {
         cout << "7. Volver\n";
         cout << "----> ";
         cin >> opcion;
-        system("cls");
+        clearConsole();
 
         switch (opcion) {
         case 1:
@@ -1225,7 +1307,7 @@ void menuPrincipal() {
         cout << "6. Salir\n";
         cout << "Ingrese una opción: ";
         cin >> opcion;
-        system("cls");
+        clearConsole();
 
         switch (opcion) {
         case 1:
@@ -1268,6 +1350,15 @@ void Bienvenida(const string &fileName) {
     inputFile.close(); // Cerrar el archivo
 }
 
+// Función para limpiar la consola (función portátil)
+void clearConsole() {
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
 int main() {
     srand(time(0)); // Inicializar la semilla para números aleatorios
 
@@ -1277,7 +1368,7 @@ int main() {
         Bienvenida(filename);
         cout << "PRESIONA X PARA CONTINUAR --> ";
         cin >> continuar;
-        system("cls"); // Limpia la consola
+        clearConsole(); // Limpia la consola
     }
     menuPrincipal(); // Iniciar el menú principal
     return 0;
