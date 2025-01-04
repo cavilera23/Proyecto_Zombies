@@ -5,6 +5,9 @@
 #include <memory>    // Para punteros inteligentes (unique_ptr)
 #include <algorithm> // Para std::find_if
 #include <map>
+#include <unordered_map>
+#include <limits>
+#include <set>
 #include <queue>
 #include <cstdlib>
 #include <ctime>
@@ -130,30 +133,22 @@ struct SeccionMetro {
     string nombre;
     bool hayZombies;
     bool hayAccesorios;
-    SeccionMetro *siguiente;
+    unordered_map<SeccionMetro*, int> vecinos; // Adyacencias con costos
 
     SeccionMetro(const string &nombre, bool zombies, bool accesorios)
-        : nombre(nombre), hayZombies(zombies), hayAccesorios(accesorios), siguiente(nullptr) {}
+        : nombre(nombre), hayZombies(zombies), hayAccesorios(accesorios) {}
 };
 
 class MapaMetro {
-private:
-    SeccionMetro *inicio;
-
 public:
-    MapaMetro() : inicio(nullptr) {}
+    unordered_map<string, SeccionMetro*> secciones;
 
     void agregarSeccion(const string &nombre, bool hayZombies, bool hayAccesorios) {
-        SeccionMetro *nuevaSeccion = new SeccionMetro(nombre, hayZombies, hayAccesorios);
-        if (!inicio) {
-            inicio = nuevaSeccion;
-        } else {
-            SeccionMetro *temp = inicio;
-            while (temp->siguiente) {
-                temp = temp->siguiente;
-            }
-            temp->siguiente = nuevaSeccion;
-        }
+        secciones[nombre] = new SeccionMetro(nombre, hayZombies, hayAccesorios);
+    }
+
+    void agregarConexion(const string &origen, const string &destino, int costo) {
+        secciones[origen]->vecinos[secciones[destino]] = costo;
     }
 
     bool eliminarSeccion(const string &nombre) {
@@ -211,10 +206,8 @@ public:
     }
 
     ~MapaMetro() {
-        while (inicio) {
-            SeccionMetro *temp = inicio;
-            inicio = inicio->siguiente;
-            delete temp;
+        for (auto &pair : secciones) {
+            delete pair.second;
         }
     }
 };
